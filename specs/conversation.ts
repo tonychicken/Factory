@@ -33,11 +33,11 @@ export const conversation = defineFlow({
   matrix: {
     waiting: {
       accept: { to: "talking", see: { visitor: "「已接通」", agent: "「已接通」，以及等候時打的訊息" }, effects: ["connect", "leaveQueue"], by: "accept" },
-      visitorSends: { to: "waiting", see: { visitor: "訊息出現，標示「接通後會看到」", agent: "沒有變化" }, effects: ["store"], by: "typeEarly" },
+      visitorSends: { to: "waiting", see: { visitor: "訊息出現，標示「已送達，接通後專員會看到」", agent: "沒有變化" }, effects: ["store"], by: "typeEarly" },
       agentSends: { refuse: "這段對話還沒有接起", by: "accept" },
       visitorEnds: { to: "ended", see: { visitor: "「你已結束對話」，只能看", agent: "清單移除這一位" }, effects: ["end", "leaveQueue"], by: "bothEnd" },
       agentEnds: { refuse: "這段對話還沒有接起", by: "accept" },
-      visitorGone: { to: "waiting", see: { visitor: "「連線中斷，正在重試」", agent: "清單標示「離線」，不能接起" }, effects: ["markGone"], by: "presence" },
+      visitorGone: { to: "waiting", see: { visitor: "「連線中斷，正在重試」", agent: "清單標示「離線」，接起下一位時跳過" }, effects: ["markGone"], by: "presence" },
       visitorBack: { to: "waiting", see: { visitor: "回到原本的等候畫面", agent: "「離線」標示消失" }, effects: ["markBack"], by: "presence" },
       visitorLong: { to: "ended", see: { visitor: "連回後看到「等候已結束」和「再找真人」", agent: "清單移除這一位" }, effects: ["end", "leaveQueue"], by: "giveUp" },
       agentGone: { to: "waiting", see: same, effects: [], by: "presence" },
@@ -51,7 +51,7 @@ export const conversation = defineFlow({
       visitorEnds: { to: "ended", see: { visitor: "「你已結束對話」，只能看，可「再找真人」", agent: "「訪客已結束對話」，只能看" }, effects: ["end"], by: "bothEnd" },
       agentEnds: { to: "ended", see: { visitor: "「專員已結束對話」，只能看，可「再找真人」", agent: "「你已結束對話」，只能看" }, effects: ["end"], by: "endable" },
       visitorGone: { to: "talking", see: { visitor: "「連線中斷，正在重試」", agent: "「訪客連線中斷」" }, effects: ["markGone"], by: "presence" },
-      visitorBack: { to: "talking", see: { visitor: "提示消失，補齊訊息", agent: "「訪客連線中斷」消失" }, effects: ["markBack"], by: "presence" },
+      visitorBack: { to: "talking", see: { visitor: "提示消失，補齊訊息", agent: "「訪客連線中斷」或「已離開一陣子」消失" }, effects: ["markBack"], by: "presence" },
       visitorLong: { to: "talking", see: { visitor: "沒有變化", agent: "「訪客已離開一陣子，要結束嗎？」" }, effects: ["markGone"], by: "stay" },
       agentGone: { to: "talking", see: { visitor: "「專員連線不穩，請稍候」，可以自己結束", agent: "「連線中斷，正在重試」" }, effects: ["markGone"], by: "stay" },
       agentBack: { to: "talking", see: { visitor: "提示消失", agent: "提示消失，補齊訊息" }, effects: ["markBack"], by: "presence" },

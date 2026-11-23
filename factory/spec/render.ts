@@ -13,7 +13,7 @@ function flowText(flow: Flow): string {
         const to = c.to === s ? "不變" : `→ ${flow.states[c.to] ?? c.to}`;
         return [`| ${eventTitle(flow, e)} | ${to} | ${who.map(([k]) => c.see[k] ?? "").join(" | ")}${c.temporary === undefined ? "" : "（暫行）"} | ${src} |`];
       }
-      return "refuse" in c ? [`| ${eventTitle(flow, e)} | 拒絕 | ${who.map(() => c.refuse).join(" | ")} | ${src} |`] : [];
+      return "refuse" in c ? [`| ${eventTitle(flow, e)} | 拒絕 | ${who.map((_, i) => (i === 0 ? `只有送出請求的人看到：${c.refuse}` : "沒有變化")).join(" | ")} | ${src} |`] : [];
     });
     const never = row(flow, s).flatMap(([e, c]) => ("never" in c ? [`${eventTitle(flow, e)}（${c.never}）`] : []));
     return [`### ${title}`, "", `| 發生 | 狀態 | ${who.map(([, t]) => `${t}看到`).join(" | ")} | 誰決定 |`, `|---|---|${who.map(() => "---").join("|")}|---|`, ...rows, ...(never.length > 0 ? ["", `不會發生：${never.join("；")}`] : []), ""].join("\n");

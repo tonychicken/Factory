@@ -42,7 +42,7 @@ export const messageMark = defineFlow({
   id: "message.mark", kind: "interaction", title: "訊息旁的標示（送的人）",
   states: { sending: "送出中", offline: "等待連線", failed: "沒有送出", delivered: "已送達", refused: "不收" },
   events: { ack: "收到確認", nack: "收到不收", lost: { title: "斷線", back: "back" }, back: "連回", slow: "連線中等了 10 秒沒有回應", resend: "按「重送」" },
-  effects: { send: "用同一個編號送出", startTimer: "開始算 10 秒", stopTimer: "停止計時" },
+  effects: { send: "用同一個編號送出", startTimer: "開始算 10 秒", stopTimer: "停止計時", checkConnection: "檢查連線，不通就重新連線" },
   audience: { sender: "送的人" },
   decisions: {
     sending: { from: "owner", ref: "v0.1/F4.a" },
@@ -59,7 +59,7 @@ export const messageMark = defineFlow({
       nack: { to: "refused", see: { sender: "說明原因" }, effects: ["stopTimer"], by: "truth" },
       lost: { to: "offline", see: { sender: "「等待連線」" }, effects: ["stopTimer"], by: "ten" },
       back: { to: "sending", see: { sender: "沒有變化" }, effects: [], by: "catchUp" },
-      slow: { to: "failed", see: { sender: "「這則沒有送出，點一下重送」" }, effects: ["stopTimer"], by: "ten" },
+      slow: { to: "failed", see: { sender: "「這則沒有送出，點一下重送」" }, effects: ["stopTimer", "checkConnection"], by: "ten" },
       resend: { never: "送出中沒有重送按鈕", by: "ui" },
     },
     offline: {
@@ -74,7 +74,7 @@ export const messageMark = defineFlow({
       ack: { to: "delivered", see: { sender: "改為「已送達」" }, effects: ["stopTimer"], by: "truth" },
       nack: { to: "refused", see: { sender: "說明原因" }, effects: ["stopTimer"], by: "truth" },
       lost: { to: "offline", see: { sender: "「等待連線」" }, effects: ["stopTimer"], by: "ten" },
-      back: { to: "failed", see: { sender: "沒有變化" }, effects: [], by: "catchUp" },
+      back: { to: "sending", see: { sender: "「送出中」，自動補送" }, effects: ["send", "startTimer"], by: "catchUp" },
       slow: { to: "failed", see: { sender: "沒有變化" }, effects: [], by: "ten" },
       resend: { to: "sending", see: { sender: "「送出中」" }, effects: ["send", "startTimer"], by: "resend" },
     },
@@ -87,7 +87,7 @@ export const messageMark = defineFlow({
       resend: { never: "已送達沒有重送按鈕", by: "ui" },
     },
     refused: {
-      ack: { to: "delivered", see: { sender: "改為「已送達」，以伺服器為準" }, effects: [], by: "truth" },
+      ack: { to: "delivered", see: { sender: "補齊時發現伺服器有收下，改為「已送達」" }, effects: [], by: "truth" },
       nack: { to: "refused", see: { sender: "沒有變化" }, effects: [], by: "truth" },
       lost: { to: "refused", see: { sender: "沒有變化" }, effects: [], by: "truth" },
       back: { to: "refused", see: { sender: "沒有變化" }, effects: [], by: "truth" },
