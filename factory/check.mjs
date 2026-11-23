@@ -7,6 +7,7 @@ import { checkFiles } from "./rules/files.mjs";
 import { checkExemptions, exempt } from "./rules/exemptions.mjs";
 import { quiet } from "./rules/report.mjs";
 import { measure, overBudget } from "./scan/budget.mjs";
+import { fromVitest, judge, RED, separate } from "./red.mjs";
 
 const root = path.resolve(import.meta.dirname, "..");
 process.chdir(root);
@@ -44,7 +45,22 @@ const steps = [
   ["樣式", () => { if (!all.some((p) => p.endsWith(".css"))) return []; const r = node([bin("stylelint/bin/stylelint.mjs"), "**/*.css"]); return r.ok ? [] : r.text.split("\n").slice(0, 20); }],
   ["規格", () => { const old = fs.existsSync("specs/preview.md") ? fs.readFileSync("specs/preview.md", "utf8") : ""; const r = node(["specs/render.ts"]); if (!r.ok) return r.text.split("\n"); return fs.readFileSync("specs/preview.md", "utf8") === old.replaceAll("\r\n", "\n") ? [] : ["specs/preview.md 不是最新的（已重新產生，請一起提交）"]; }],
   ["工廠與規格的測試", () => { const files = all.filter((p) => /^(factory|specs)\/.*\.test\.(mjs|ts)$/.test(p)); const r = node(["--test", "--test-reporter=tap", ...files]); return r.ok ? [] : r.text.split("\n").filter((l) => /^not ok/.test(l)).slice(0, 15); }],
-  ["產品的測試", () => { const r = node([bin("vitest/vitest.mjs"), "run"]); return r.ok ? [] : r.text.split("\n").filter((l) => /FAIL|Error|×/.test(l)).slice(0, 15); }],
+  ["出題與作答分開", () => {
+    const git = (args) => spawnSync("git", args, { encoding: "utf8" });
+    const changed = [...git(["diff", "--name-only", "HEAD"]).stdout.split("\n"), ...git(["ls-files", "--others", "--exclude-standard"]).stdout.split("\n")].filter(Boolean);
+    const old = git(["show", `HEAD:${RED}`]);
+    return separate(changed, old.status === 0 ? JSON.parse(old.stdout) : [], JSON.parse(fs.readFileSync(RED, "utf8")));
+  }],
+  ["產品的測試", () => {
+    const file = path.join(root, "node_modules", ".vitest-result.json");
+    fs.rmSync(file, { force: true });
+    const r = spawnSync(process.execPath, [bin("vitest/vitest.mjs"), "run", "--reporter=json", `--outputFile=${file}`], { encoding: "utf8", env: { ...process.env, NO_COLOR: "1" } });
+    if (!fs.existsSync(file)) return [`測試沒有結果：${r.stderr.slice(0, 300)}`];
+    const json = JSON.parse(fs.readFileSync(file, "utf8"));
+    fs.rmSync(file);
+    const results = fromVitest(json);
+    return results.length === 0 ? ["一個測試都沒有跑到"] : judge(results, JSON.parse(fs.readFileSync(RED, "utf8")));
+  }],
   ["建置", () => { const r = node([bin("vite/bin/vite.js"), "build", "apps/visitor", "--logLevel", "warn"]); return r.ok && r.text === "" ? [] : r.text.split("\n").slice(0, 10); }],
 ];
 

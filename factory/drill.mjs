@@ -47,6 +47,10 @@ const drills = [
   ["規格", "刪掉先來先服務", edit("specs/rules.ts", 'ref: "v0.1/F2.c"', 'ref: "v0.1/F2.d"')],
   ["工廠與規格的測試", "關掉一條規則", edit("factory/rules/config.mjs", '"f/no-dynamic-key": "error",', "")],
   ["產品的測試", "改壞 retry", edit("platform/clock.ts", "i < times", "i <= times")],
+  ["產品的測試", "在預期失敗清單放會過的測試", { "acceptance/expected-red.json": () => JSON.stringify(["每個狀態都有中文"]) }],
+  ["產品的測試", "在預期失敗清單放不存在的測試", { "acceptance/expected-red.json": () => JSON.stringify(["沒有這個"]) }],
+  ["產品的測試", "新增一個會失敗的測試", { "domain/x.test.ts": "import { expect, it } from \"vitest\";\nit(\"故意失敗\", () => { expect(1).toBe(2); });\n" }],
+  ["出題與作答分開", "同時改驗收測試與產品碼", { "acceptance/a.test.ts": "export {};\n", "domain/x.ts": "export const x = 1;\n" }],
   ["建置", "入口壞掉", edit("apps/visitor/index.html", "/src/main.tsx", "/src/missing.tsx")],
 ];
 
