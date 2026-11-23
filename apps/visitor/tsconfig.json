@@ -1,0 +1,1 @@
+{ "extends": "../../tsconfig.base.json", "compilerOptions": { "rootDir": "src", "outDir": ".types" }, "include": ["src"], "exclude": ["**/*.test.ts", "**/*.test.tsx"], "references": [{ "path": "../../ui" }, { "path": "../../platform" }, { "path": "../../domain" }, { "path": "../../contracts" }] }

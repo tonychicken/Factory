@@ -1,0 +1,1 @@
+{ "extends": "../tsconfig.base.json", "compilerOptions": { "rootDir": ".", "outDir": ".types", "lib": ["es2024", "dom", "dom.iterable"] }, "include": ["*.ts", "*.tsx"], "exclude": ["*.test.ts", "*.test.tsx"], "references": [{ "path": "../contracts" }] }

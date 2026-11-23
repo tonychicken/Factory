@@ -1,0 +1,1 @@
+{ "name": "@f/ui", "private": true, "type": "module", "exports": { ".": { "types": "./.types/index.d.ts", "default": "./index.ts" } } }
