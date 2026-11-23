@@ -16,16 +16,24 @@ export function delay(ms: number, clock: Clock = systemClock): Promise<void> {
   return new Promise((resolve) => { clock.after(ms, resolve); });
 }
 
+type Attempt<T> = { readonly ok: true; readonly value: T } | { readonly ok: false; readonly error: unknown };
+
+async function attempt<T>(job: () => Promise<T>): Promise<Attempt<T>> {
+  try {
+    return { ok: true, value: await job() };
+  } catch (error) {
+    return { ok: false, error };
+  }
+}
+
 /** 失敗後等一下再試，等待時間每次加倍。最後一次失敗會往外拋。 */
 export async function retry<T>(job: () => Promise<T>, times: number, clock: Clock = systemClock): Promise<T> {
-  for (let i = 1; ; i += 1) {
-    try {
-      return await job();
-    } catch (error) {
-      if (i >= times) { throw error; }
-      await delay(100 * 2 ** (i - 1), clock);
-    }
+  for (let i = 1; i < times; i += 1) {
+    const result = await attempt(job);
+    if (result.ok) { return result.value; }
+    await delay(100 * 2 ** (i - 1), clock);
   }
+  return job();
 }
 
 export function all<T>(jobs: readonly Promise<T>[]): Promise<readonly T[]> {

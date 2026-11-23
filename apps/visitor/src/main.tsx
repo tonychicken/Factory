@@ -1,4 +1,4 @@
-import { mount } from "@f/ui";
+import { mount } from "@f/platform";
 import { App } from "./app";
 
 mount(<App />);

@@ -1,0 +1,11 @@
+import assert from "node:assert/strict"; import { test } from "node:test"; import { checkFiles } from "./files.mjs";
+const n = (p, t = "") => checkFiles(new Map([[p, t]])).length;
+const html = '<!doctype html><title>t</title><script type="module" src="/src/main.tsx"></script>';
+for (const p of ["apps/visitor/src/a.tsx", "apps/visitor/src/a.test.ts", "domain/queue.ts", "ui/button.tsx", "ui/token.css", "apps/visitor/public/logo.png", "factory/x.mjs"]) test(`放行 ${p}`, () => assert.equal(n(p), 0));
+test("放行 HTML", () => assert.equal(n("apps/visitor/index.html", html), 0));
+for (const p of ["apps/visitor/src/a.js", "apps/visitor/src/types.d.ts", "apps/visitor/public/x.js", "apps/visitor/other.html", "domain/a.tsx", "apps/visitor/vite.config.ts", "apps/visitor/src/a.worker.ts", "apps/visitor/src/d.json", "apps/visitor/src/a.mts", "apps/visitor/.env"]) test(`擋 ${p}`, () => assert.equal(n(p), 1));
+test("擋 行內 script", () => assert.ok(n("apps/visitor/index.html", html + "<script>1</script>") > 0));
+test("擋 外部 script", () => assert.ok(n("apps/visitor/index.html", '<script type="module" src="https://x.test/a.js"></script>') > 0));
+test("擋 onload 屬性", () => assert.ok(n("apps/visitor/index.html", html + '<img src=x onerror="1">') > 0));
+test("擋 SVG 夾帶", () => assert.equal(n("apps/visitor/public/a.svg", "<svg><script>1</script></svg>"), 1));
+test("放行 正常 SVG", () => assert.equal(n("apps/visitor/public/a.svg", "<svg><path d='M0 0'/></svg>"), 0));

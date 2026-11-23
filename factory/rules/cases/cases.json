@@ -1,0 +1,2659 @@
+[
+ {
+  "name": "ok 一般畫面",
+  "layer": "apps",
+  "ext": "tsx",
+  "expect": "allow",
+  "code": [
+   "import { useState } from \"react\";",
+   "import { Button, MessageList, TextField } from \"@f/ui\";",
+   "import { reportError, sendMessage } from \"@f/platform\";",
+   "export function Chat() {",
+   "  const [text, setText] = useState(\"\");",
+   "  const [sent, setSent] = useState<readonly string[]>([]);",
+   "  const send = async (): Promise<void> => {",
+   "    try {",
+   "      await sendMessage(text);",
+   "      setSent((prev) => [...prev, text]);",
+   "      setText(\"\");",
+   "    } catch (error) {",
+   "      reportError(error);",
+   "    }",
+   "  };",
+   "  return (",
+   "    <section>",
+   "      <MessageList>{sent.map((m) => <p key={m}>{m}</p>)}</MessageList>",
+   "      <TextField value={text} onChange={setText} />",
+   "      <Button onPress={send}>送出</Button>",
+   "    </section>",
+   "  );",
+   "}"
+  ]
+ },
+ {
+  "name": "ok 用 platform 的 debounce",
+  "layer": "apps",
+  "ext": "tsx",
+  "expect": "allow",
+  "code": [
+   "import { debounce, reportError } from \"@f/platform\";",
+   "export const search = debounce((q: string) => { reportError(q); }, 300);"
+  ]
+ },
+ {
+  "name": "ok useReducer + 窮舉",
+  "layer": "apps",
+  "ext": "tsx",
+  "expect": "allow",
+  "code": [
+   "import { useReducer } from \"react\";",
+   "import { Button } from \"@f/ui\";",
+   "type S = { readonly kind: \"idle\" } | { readonly kind: \"sending\"; readonly text: string };",
+   "type E = { readonly type: \"send\"; readonly text: string } | { readonly type: \"done\" };",
+   "function reduce(_state: S, event: E): S {",
+   "  switch (event.type) {",
+   "    case \"send\": return { kind: \"sending\", text: event.text };",
+   "    case \"done\": return { kind: \"idle\" };",
+   "  }",
+   "}",
+   "export function View() {",
+   "  const [state, dispatch] = useReducer(reduce, { kind: \"idle\" });",
+   "  return <Button onPress={() => { dispatch({ type: \"done\" }); }}>{state.kind}</Button>;",
+   "}"
+  ]
+ },
+ {
+  "name": "ok domain 純函式",
+  "layer": "domain",
+  "ext": "ts",
+  "expect": "allow",
+  "code": [
+   "export interface Clock { readonly now: () => number }",
+   "export function isExpired(clock: Clock, startedAt: number, limitMs: number): boolean {",
+   "  return clock.now() - startedAt > limitMs;",
+   "}"
+  ]
+ },
+ {
+  "name": "ok zod 驗證外部資料",
+  "layer": "domain",
+  "ext": "ts",
+  "expect": "allow",
+  "code": [
+   "import { z } from \"zod\";",
+   "const Message = z.object({ id: z.string(), text: z.string() });",
+   "export function parse(input: unknown): z.infer<typeof Message> { return Message.parse(input); }"
+  ]
+ },
+ {
+  "name": "ok as const",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "allow",
+  "code": [
+   "export const modes = [\"idle\", \"busy\"] as const;"
+  ]
+ },
+ {
+  "name": "ok platform 可以計時",
+  "layer": "platform",
+  "ext": "ts",
+  "expect": "allow",
+  "code": [
+   "export function delay(ms: number): Promise<void> {",
+   "  return new Promise((resolve) => { setTimeout(resolve, ms); });",
+   "}"
+  ]
+ },
+ {
+  "name": "ok ui 可以用 effect 訂閱",
+  "layer": "ui",
+  "ext": "ts",
+  "expect": "allow",
+  "code": [
+   "import { useEffect, useRef } from \"react\";",
+   "export function useLatest(subscribe: (cb: () => void) => () => void, cb: () => void): void {",
+   "  const ref = useRef(cb);",
+   "  useEffect(() => { ref.current = cb; }, [cb]);",
+   "  useEffect(() => subscribe(() => { ref.current(); }), [subscribe]);",
+   "}"
+  ]
+ },
+ {
+  "name": "R01 domain 用 setTimeout",
+  "layer": "domain",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "setTimeout(() => undefined, 0);"
+  ]
+ },
+ {
+  "name": "R02 setTimeout",
+  "layer": "apps",
+  "ext": "tsx",
+  "expect": "block",
+  "code": [
+   "setTimeout(() => undefined, 0);"
+  ]
+ },
+ {
+  "name": "R02 window.setTimeout",
+  "layer": "apps",
+  "ext": "tsx",
+  "expect": "block",
+  "code": [
+   "window.setTimeout(() => undefined, 0);"
+  ]
+ },
+ {
+  "name": "R02 globalThis.setTimeout",
+  "layer": "apps",
+  "ext": "tsx",
+  "expect": "block",
+  "code": [
+   "globalThis.setTimeout(() => undefined, 0);"
+  ]
+ },
+ {
+  "name": "R02 queueMicrotask",
+  "layer": "apps",
+  "ext": "tsx",
+  "expect": "block",
+  "code": [
+   "queueMicrotask(() => undefined);"
+  ]
+ },
+ {
+  "name": "R02 requestAnimationFrame",
+  "layer": "apps",
+  "ext": "tsx",
+  "expect": "block",
+  "code": [
+   "requestAnimationFrame(() => undefined);"
+  ]
+ },
+ {
+  "name": "R02 import node:timers",
+  "layer": "apps",
+  "ext": "tsx",
+  "expect": "block",
+  "code": [
+   "import { setTimeout as t } from \"node:timers\";",
+   "t(() => undefined, 0);"
+  ]
+ },
+ {
+  "name": "R03 fetch",
+  "layer": "apps",
+  "ext": "tsx",
+  "expect": "block",
+  "code": [
+   "export const r = fetch(\"/x\");"
+  ]
+ },
+ {
+  "name": "R03 WebSocket",
+  "layer": "apps",
+  "ext": "tsx",
+  "expect": "block",
+  "code": [
+   "export const r = new WebSocket(\"ws://x\");"
+  ]
+ },
+ {
+  "name": "R04 document",
+  "layer": "apps",
+  "ext": "tsx",
+  "expect": "block",
+  "code": [
+   "export const t = document.title;"
+  ]
+ },
+ {
+  "name": "R04 localStorage",
+  "layer": "apps",
+  "ext": "tsx",
+  "expect": "block",
+  "code": [
+   "localStorage.setItem(\"a\", \"b\");"
+  ]
+ },
+ {
+  "name": "R05 Date.now",
+  "layer": "apps",
+  "ext": "tsx",
+  "expect": "block",
+  "code": [
+   "export const n = Date.now();"
+  ]
+ },
+ {
+  "name": "R05 new Date()",
+  "layer": "apps",
+  "ext": "tsx",
+  "expect": "block",
+  "code": [
+   "export const n = new Date();"
+  ]
+ },
+ {
+  "name": "R05 Math.random",
+  "layer": "apps",
+  "ext": "tsx",
+  "expect": "block",
+  "code": [
+   "export const n = Math.random();"
+  ]
+ },
+ {
+  "name": "R05 domain Date.now",
+  "layer": "domain",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "export const n = Date.now();"
+  ]
+ },
+ {
+  "name": "R05 domain Math.random",
+  "layer": "domain",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "export const n = Math.random();"
+  ]
+ },
+ {
+  "name": "R06 useEffect",
+  "layer": "apps",
+  "ext": "tsx",
+  "expect": "block",
+  "code": [
+   "import { useEffect } from \"react\";",
+   "export function A() { useEffect(() => undefined, []); return null; }"
+  ]
+ },
+ {
+  "name": "R06 useRef",
+  "layer": "apps",
+  "ext": "tsx",
+  "expect": "block",
+  "code": [
+   "import { useRef } from \"react\";",
+   "export function A() { const r = useRef(0); void r; return null; }"
+  ]
+ },
+ {
+  "name": "R06 import React",
+  "layer": "apps",
+  "ext": "tsx",
+  "expect": "block",
+  "code": [
+   "import React from \"react\";",
+   "export function A() { React.useEffect(() => undefined, []); return null; }"
+  ]
+ },
+ {
+  "name": "R06 import * as R",
+  "layer": "apps",
+  "ext": "tsx",
+  "expect": "block",
+  "code": [
+   "import * as R from \"react\";",
+   "export function A() { R.useEffect(() => undefined, []); return null; }"
+  ]
+ },
+ {
+  "name": "R07 effect 裡同步 setState",
+  "layer": "ui",
+  "ext": "tsx",
+  "expect": "block",
+  "code": [
+   "import { useEffect, useState } from \"react\";",
+   "export function A({ v }: { readonly v: number }) {",
+   "  const [x, setX] = useState(0);",
+   "  useEffect(() => { setX(v + 1); }, [v]);",
+   "  return <p>{x}</p>;",
+   "}"
+  ]
+ },
+ {
+  "name": "R07 漏依賴",
+  "layer": "ui",
+  "ext": "tsx",
+  "expect": "block",
+  "code": [
+   "import { useEffect } from \"react\";",
+   "export function A({ v, on }: { readonly v: number; readonly on: (n: number) => void }) {",
+   "  useEffect(() => { on(v); }, []);",
+   "  return null;",
+   "}"
+  ]
+ },
+ {
+  "name": "R08 沒 await",
+  "layer": "apps",
+  "ext": "tsx",
+  "expect": "block",
+  "code": [
+   "import { sendMessage } from \"@f/platform\";",
+   "export function go(): void { sendMessage(\"x\"); }"
+  ]
+ },
+ {
+  "name": "R08 async 給 onClick",
+  "layer": "apps",
+  "ext": "tsx",
+  "expect": "block",
+  "code": [
+   "import { sendMessage } from \"@f/platform\";",
+   "export function A() { return <button type=\"button\" onClick={async () => { await sendMessage(\"x\"); }}>x</button>; }"
+  ]
+ },
+ {
+  "name": "R09 空 catch",
+  "layer": "apps",
+  "ext": "tsx",
+  "expect": "block",
+  "code": [
+   "import { sendMessage } from \"@f/platform\";",
+   "export async function go(): Promise<void> { try { await sendMessage(\"x\"); } catch { } }"
+  ]
+ },
+ {
+  "name": "R09 只有註解的 catch",
+  "layer": "apps",
+  "ext": "tsx",
+  "expect": "block",
+  "code": [
+   "import { sendMessage } from \"@f/platform\";",
+   "export async function go(): Promise<void> { try { await sendMessage(\"x\"); } catch { /* 忽略 */ } }"
+  ]
+ },
+ {
+  "name": "R09 catch 只回傳 null",
+  "layer": "apps",
+  "ext": "tsx",
+  "expect": "block",
+  "code": [
+   "import { sendMessage } from \"@f/platform\";",
+   "export async function go(): Promise<string | null> { try { await sendMessage(\"x\"); return \"ok\"; } catch { return null; } }"
+  ]
+ },
+ {
+  "name": "R10 any",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "export function f(x: any): string { return String(x); }"
+  ]
+ },
+ {
+  "name": "R10 as Foo",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "export function f(x: unknown): string { return x as string; }"
+  ]
+ },
+ {
+  "name": "R10 非空斷言",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "export function f(x: string | null): number { return x!.length; }"
+  ]
+ },
+ {
+  "name": "R10 ts-ignore",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "// @ts-ignore",
+   "export const n: number = \"x\";"
+  ]
+ },
+ {
+  "name": "R10 ts-expect-error",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "// @ts-expect-error 因為我想這樣做所以寫了很長的理由",
+   "export const n: number = \"x\";"
+  ]
+ },
+ {
+  "name": "R11 直接用 JSON.parse",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "export function f(s: string): string { const o: { id: string } = JSON.parse(s); return o.id; }"
+  ]
+ },
+ {
+  "name": "R13 漏處理狀態",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "type S = { readonly kind: \"a\" } | { readonly kind: \"b\" } | { readonly kind: \"c\" };",
+   "export function f(s: S): void { switch (s.kind) { case \"a\": break; case \"b\": break; } }"
+  ]
+ },
+ {
+  "name": "R15 addEventListener",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "export function f(el: { addEventListener(n: string, f: () => void): void }): void { el.addEventListener(\"x\", () => undefined); }"
+  ]
+ },
+ {
+  "name": "R16 dangerouslySetInnerHTML",
+  "layer": "apps",
+  "ext": "tsx",
+  "expect": "block",
+  "code": [
+   "export function A() { return <p dangerouslySetInnerHTML={{ __html: \"<b>x</b>\" }} />; }"
+  ]
+ },
+ {
+  "name": "R16 innerHTML",
+  "layer": "ui",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "export function f(el: HTMLElement, s: string): void { el.innerHTML = s; }"
+  ]
+ },
+ {
+  "name": "R17 JSX style",
+  "layer": "apps",
+  "ext": "tsx",
+  "expect": "block",
+  "code": [
+   "export function A() { return <p style={{ color: \"#ff0000\" }}>x</p>; }"
+  ]
+ },
+ {
+  "name": "R20 行內關規則",
+  "layer": "apps",
+  "ext": "tsx",
+  "expect": "block",
+  "code": [
+   "/* eslint-disable */",
+   "setTimeout(() => undefined, 0);"
+  ]
+ },
+ {
+  "name": "R20 ts-nocheck",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "// @ts-nocheck",
+   "export const n: number = \"x\";"
+  ]
+ },
+ {
+  "name": "R21 it.skip",
+  "layer": "apps",
+  "ext": "ts",
+  "kind": "test",
+  "expect": "block",
+  "code": [
+   "import { it } from \"vitest\";",
+   "it.skip(\"x\", () => undefined);"
+  ]
+ },
+ {
+  "name": "攻 Promise.resolve().then",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "export function f(cb: () => void): void { void Promise.resolve().then(cb); }"
+  ]
+ },
+ {
+  "name": "攻 await 空值當延遲",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "export async function f(cb: () => void): Promise<void> { await Promise.resolve(); cb(); }"
+  ]
+ },
+ {
+  "name": "攻 globalThis 存成變數",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "const g = globalThis;",
+   "g.setTimeout(() => undefined, 0);"
+  ]
+ },
+ {
+  "name": "攻 解構 globalThis",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "const { setTimeout: t } = globalThis;",
+   "t(() => undefined, 0);"
+  ]
+ },
+ {
+  "name": "攻 Reflect.get",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "const t: unknown = Reflect.get(globalThis, \"setTimeout\");",
+   "if (typeof t === \"function\") { t(() => undefined, 0); }"
+  ]
+ },
+ {
+  "name": "攻 declare 自己宣告",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "declare function setTimeout(f: () => void, ms: number): number;",
+   "setTimeout(() => undefined, 0);",
+   "export {};"
+  ]
+ },
+ {
+  "name": "攻 declare global",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "declare global { var setTimeout: (f: () => void, ms: number) => number; }",
+   "setTimeout(() => undefined, 0);",
+   "export {};"
+  ]
+ },
+ {
+  "name": "攻 型別守衛騙型別",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "interface T { readonly setTimeout: (f: () => void, ms: number) => number }",
+   "function isT(x: unknown): x is T { return x !== undefined; }",
+   "const g: unknown = globalThis;",
+   "if (isT(g)) { g.setTimeout(() => undefined, 0); }",
+   "export {};"
+  ]
+ },
+ {
+  "name": "攻 三斜線引入 DOM 型別",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "/// <reference lib=\"dom\" />",
+   "const g = globalThis;",
+   "g.setTimeout(() => undefined, 0);",
+   "export {};"
+  ]
+ },
+ {
+  "name": "攻 三斜線引入 node 型別",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "/// <reference types=\"node\" />",
+   "const g = globalThis;",
+   "g.setTimeout(() => undefined, 0);",
+   "export {};"
+  ]
+ },
+ {
+  "name": "攻 Atomics.waitAsync 計時",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "export async function f(cb: () => void): Promise<void> {",
+   "  const r = Atomics.waitAsync(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 500);",
+   "  await r.value;",
+   "  cb();",
+   "}"
+  ]
+ },
+ {
+  "name": "攻 Atomics.wait 卡住",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 500);",
+   "export {};"
+  ]
+ },
+ {
+  "name": "攻 空迴圈等待",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "export function f(): void { let n = 0; while (n < 1e9) { n += 1; } }"
+  ]
+ },
+ {
+  "name": "攻 AbortSignal.timeout",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "export function f(cb: () => void): void { AbortSignal.timeout(500).onabort = cb; }"
+  ]
+ },
+ {
+  "name": "攻 MessageChannel",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "export function f(cb: () => void): void { const c = new MessageChannel(); c.port1.onmessage = cb; c.port2.postMessage(0); }"
+  ]
+ },
+ {
+  "name": "攻 setTimeout 的親戚 scheduler",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "export async function f(cb: () => void): Promise<void> { const s: { postTask(f: () => void, o: { delay: number }): Promise<void> } = scheduler; await s.postTask(cb, { delay: 1 }); }"
+  ]
+ },
+ {
+  "name": "攻 ResizeObserver",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "export function f(cb: () => void): ResizeObserver { return new ResizeObserver(cb); }"
+  ]
+ },
+ {
+  "name": "攻 Image 連外",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "export function f(): void { const i = new Image(); i.src = \"https://x.test/?a=1\"; }"
+  ]
+ },
+ {
+  "name": "攻 事件物件拿到 DOM",
+  "layer": "apps",
+  "ext": "tsx",
+  "expect": "block",
+  "code": [
+   "export function A() { return <button type=\"button\" onClick={(e) => { e.currentTarget.ownerDocument.defaultView?.setTimeout(() => undefined, 0); }}>x</button>; }"
+  ]
+ },
+ {
+  "name": "攻 ref callback",
+  "layer": "apps",
+  "ext": "tsx",
+  "expect": "block",
+  "code": [
+   "export function A() { return <div ref={(el) => { el?.scrollTo(0, 99); }} />; }"
+  ]
+ },
+ {
+  "name": "攻 useSyncExternalStore 當 effect",
+  "layer": "apps",
+  "ext": "tsx",
+  "expect": "block",
+  "code": [
+   "import { useSyncExternalStore } from \"react\";",
+   "export function A({ go }: { readonly go: () => void }) { useSyncExternalStore(() => { go(); return () => undefined; }, () => 0); return null; }"
+  ]
+ },
+ {
+  "name": "攻 class 元件 componentDidMount",
+  "layer": "apps",
+  "ext": "tsx",
+  "expect": "block",
+  "code": [
+   "import { Component } from \"react\";",
+   "export class A extends Component { override componentDidMount(): void { this.setState({}); } override render() { return null; } }"
+  ]
+ },
+ {
+  "name": "攻 useImperativeHandle",
+  "layer": "apps",
+  "ext": "tsx",
+  "expect": "block",
+  "code": [
+   "import { useImperativeHandle } from \"react\";",
+   "export function A({ r }: { readonly r: { current: number | null } }) { useImperativeHandle(r, () => 1, []); return null; }"
+  ]
+ },
+ {
+  "name": "攻 useInsertionEffect 改名",
+  "layer": "apps",
+  "ext": "tsx",
+  "expect": "block",
+  "code": [
+   "import { useInsertionEffect as u } from \"react\";",
+   "export function A() { u(() => undefined, []); return null; }"
+  ]
+ },
+ {
+  "name": "攻 createRef",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "import { createRef } from \"react\";",
+   "export const r = createRef<HTMLDivElement>();"
+  ]
+ },
+ {
+  "name": "攻 use(promise)",
+  "layer": "apps",
+  "ext": "tsx",
+  "expect": "block",
+  "code": [
+   "import { use } from \"react\";",
+   "const p = Promise.resolve(1);",
+   "export function A() { return <p>{use(p)}</p>; }"
+  ]
+ },
+ {
+  "name": "攻 startTransition 延遲",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "import { startTransition } from \"react\";",
+   "export function f(cb: () => void): void { startTransition(cb); }"
+  ]
+ },
+ {
+  "name": "攻 react-dom flushSync",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "import { flushSync } from \"react-dom\";",
+   "export function f(cb: () => void): void { flushSync(cb); }"
+  ]
+ },
+ {
+  "name": "攻 轉出 useEffect",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "export { useEffect as onReady } from \"react\";"
+  ]
+ },
+ {
+  "name": "攻 轉出整包 react",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "export * from \"react\";"
+  ]
+ },
+ {
+  "name": "攻 動態 import react",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "export async function f(): Promise<void> { const r = await import(\"react\"); r.useEffect(() => undefined, []); }"
+  ]
+ },
+ {
+  "name": "攻 動態 import data:",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "export async function f(u: string): Promise<void> { await import(u); }"
+  ]
+ },
+ {
+  "name": "攻 動畫結束事件當 timer",
+  "layer": "apps",
+  "ext": "tsx",
+  "expect": "block",
+  "code": [
+   "export function A({ go }: { readonly go: () => void }) { return <i className=\"wait\" onAnimationEnd={go} />; }"
+  ]
+ },
+ {
+  "name": "攻 transitionend 當 timer",
+  "layer": "apps",
+  "ext": "tsx",
+  "expect": "block",
+  "code": [
+   "export function A({ go }: { readonly go: () => void }) { return <i className=\"wait\" onTransitionEnd={go} />; }"
+  ]
+ },
+ {
+  "name": "攻 img onError 當 timer",
+  "layer": "apps",
+  "ext": "tsx",
+  "expect": "block",
+  "code": [
+   "export function A({ go }: { readonly go: () => void }) { return <img alt=\"\" src=\"x:\" onError={go} />; }"
+  ]
+ },
+ {
+  "name": "攻 img 連外",
+  "layer": "apps",
+  "ext": "tsx",
+  "expect": "block",
+  "code": [
+   "export function A({ t }: { readonly t: string }) { return <img alt=\"\" src={\"https://x.test/\" + t} />; }"
+  ]
+ },
+ {
+  "name": "攻 script 標籤",
+  "layer": "apps",
+  "ext": "tsx",
+  "expect": "block",
+  "code": [
+   "export function A() { return <script src=\"/x.js\" />; }"
+  ]
+ },
+ {
+  "name": "攻 iframe srcDoc",
+  "layer": "apps",
+  "ext": "tsx",
+  "expect": "block",
+  "code": [
+   "export function A() { return <iframe title=\"x\" srcDoc=\"<script>setTimeout(()=>{},0)</script>\" />; }"
+  ]
+ },
+ {
+  "name": "攻 javascript: 連結",
+  "layer": "apps",
+  "ext": "tsx",
+  "expect": "block",
+  "code": [
+   "export function A() { return <a href=\"javascript:setTimeout(()=>{},0)\">x</a>; }"
+  ]
+ },
+ {
+  "name": "攻 展開屬性夾帶",
+  "layer": "apps",
+  "ext": "tsx",
+  "expect": "block",
+  "code": [
+   "const p = { dangerouslySetInnerHTML: { __html: \"x\" } };",
+   "export function A() { return <p {...p} />; }"
+  ]
+ },
+ {
+  "name": "攻 createElement 夾帶",
+  "layer": "apps",
+  "ext": "tsx",
+  "expect": "block",
+  "code": [
+   "import { createElement } from \"react\";",
+   "export function A() { return createElement(\"p\", { dangerouslySetInnerHTML: { __html: \"x\" } }); }"
+  ]
+ },
+ {
+  "name": "攻 eval",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "eval(\"1\");",
+   "export {};"
+  ]
+ },
+ {
+  "name": "攻 new Function",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "export const f: unknown = new Function(\"setTimeout(()=>{},0)\");"
+  ]
+ },
+ {
+  "name": "攻 constructor 取 Function",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "const F: unknown = (() => undefined).constructor;",
+   "if (typeof F === \"function\") { const g: unknown = F(\"return setTimeout\"); void g; }"
+  ]
+ },
+ {
+  "name": "攻 用第三方延遲套件",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "import debounce from \"lodash/debounce\";",
+   "export const f = debounce;"
+  ]
+ },
+ {
+  "name": "攻 vite worker 匯入",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "import W from \"./evil?worker\";",
+   "export const w = W;"
+  ]
+ },
+ {
+  "name": "攻 node 內建模組",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "import { request } from \"node:http\";",
+   "export const r = request;"
+  ]
+ },
+ {
+  "name": "攻 new Date(0) 以外的取時間 Intl",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "export const now = new Intl.DateTimeFormat(\"en\", { timeStyle: \"full\" }).format();"
+  ]
+ },
+ {
+  "name": "攻 Temporal 取時間",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "export const n: unknown = Temporal.Now.instant();"
+  ]
+ },
+ {
+  "name": "攻 crypto 亂數",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "export const id = crypto.randomUUID();"
+  ]
+ },
+ {
+  "name": "攻 performance.now",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "export const n = performance.now();"
+  ]
+ },
+ {
+  "name": "攻 泛型回傳假裝轉型",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "export function cast<T>(x: unknown): T { const o: { v?: T } = {}; Object.assign(o, { v: x }); if (o.v === undefined) { throw new Error(\"x\"); } return o.v; }"
+  ]
+ },
+ {
+  "name": "攻 .then(undefined, 空函式) 吞錯",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "import { sendMessage } from \"@f/platform\";",
+   "export function f(): void { sendMessage(\"x\").catch(() => undefined); }"
+  ]
+ },
+ {
+  "name": "攻 void 丟掉 promise",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "import { sendMessage } from \"@f/platform\";",
+   "export function f(): void { void sendMessage(\"x\"); }"
+  ]
+ },
+ {
+  "name": "攻 catch 有用到變數但什麼都沒做",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "import { sendMessage } from \"@f/platform\";",
+   "export async function f(): Promise<void> { try { await sendMessage(\"x\"); } catch (e) { void e; } }"
+  ]
+ },
+ {
+  "name": "攻 console 當日誌",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "console.log(\"x\");",
+   "export {};"
+  ]
+ },
+ {
+  "name": "攻 模組層可變狀態",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "let locked = false;",
+   "export function lock(): boolean { locked = !locked; return locked; }"
+  ]
+ },
+ {
+  "name": "攻 JSX as 斷言 <any>",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "const x = <string>JSON.parse(\"1\");",
+   "export { x };"
+  ]
+ },
+ {
+  "name": "ok2 排序與格式化",
+  "layer": "domain",
+  "ext": "ts",
+  "expect": "allow",
+  "code": [
+   "export interface Item { readonly name: string; readonly at: number }",
+   "export function newestFirst(items: readonly Item[]): readonly Item[] {",
+   "  return items.toSorted((a, b) => b.at - a.at);",
+   "}",
+   "export function label(item: Item): string { return `${item.name} (${String(item.at)})`; }"
+  ]
+ },
+ {
+  "name": "ok2 用 Map 分組",
+  "layer": "domain",
+  "ext": "ts",
+  "expect": "allow",
+  "code": [
+   "export function group(items: readonly { readonly key: string; readonly n: number }[]): ReadonlyMap<string, number> {",
+   "  const out = new Map<string, number>();",
+   "  for (const i of items) { out.set(i.key, (out.get(i.key) ?? 0) + i.n); }",
+   "  return out;",
+   "}"
+  ]
+ },
+ {
+  "name": "ok2 狀態機轉移",
+  "layer": "domain",
+  "ext": "ts",
+  "expect": "allow",
+  "code": [
+   "export type State = { readonly kind: \"waiting\" } | { readonly kind: \"talking\"; readonly agentId: string } | { readonly kind: \"ended\" };",
+   "export type Event = { readonly type: \"accept\"; readonly agentId: string } | { readonly type: \"end\" };",
+   "export function next(state: State, event: Event): State {",
+   "  switch (state.kind) {",
+   "    case \"waiting\":",
+   "      return event.type === \"accept\" ? { kind: \"talking\", agentId: event.agentId } : { kind: \"ended\" };",
+   "    case \"talking\":",
+   "      return event.type === \"end\" ? { kind: \"ended\" } : state;",
+   "    case \"ended\":",
+   "      return state;",
+   "  }",
+   "}"
+  ]
+ },
+ {
+  "name": "ok2 結果型別代替例外",
+  "layer": "domain",
+  "ext": "ts",
+  "expect": "allow",
+  "code": [
+   "export type Result<T> = { readonly ok: true; readonly value: T } | { readonly ok: false; readonly reason: \"empty\" | \"tooLong\" };",
+   "export function validate(text: string): Result<string> {",
+   "  const t = text.trim();",
+   "  if (t === \"\") { return { ok: false, reason: \"empty\" }; }",
+   "  if (t.length > 2000) { return { ok: false, reason: \"tooLong\" }; }",
+   "  return { ok: true, value: t };",
+   "}"
+  ]
+ },
+ {
+  "name": "ok2 zod 契約",
+  "layer": "domain",
+  "ext": "ts",
+  "expect": "allow",
+  "code": [
+   "import { z } from \"zod\";",
+   "export const Message = z.object({ v: z.literal(1), id: z.string(), seq: z.number().int(), text: z.string().max(2000) });",
+   "export type Message = z.infer<typeof Message>;",
+   "export const ServerEvent = z.discriminatedUnion(\"type\", [",
+   "  z.object({ type: z.literal(\"message\"), message: Message }),",
+   "  z.object({ type: z.literal(\"ended\") }),",
+   "]);"
+  ]
+ },
+ {
+  "name": "ok2 context",
+  "layer": "apps",
+  "ext": "tsx",
+  "expect": "allow",
+  "code": [
+   "import { createContext, useContext } from \"react\";",
+   "const Tenant = createContext<string | null>(null);",
+   "export function useTenant(): string {",
+   "  const t = useContext(Tenant);",
+   "  if (t === null) { throw new Error(\"缺少租戶\"); }",
+   "  return t;",
+   "}"
+  ]
+ },
+ {
+  "name": "ok2 條件畫面",
+  "layer": "apps",
+  "ext": "tsx",
+  "expect": "allow",
+  "code": [
+   "import { Button } from \"@f/ui\";",
+   "type V = { readonly kind: \"empty\" } | { readonly kind: \"list\"; readonly items: readonly { readonly id: string; readonly text: string }[] } | { readonly kind: \"error\"; readonly retry: () => void };",
+   "export function Panel({ view }: { readonly view: V }) {",
+   "  switch (view.kind) {",
+   "    case \"empty\": return <p>還沒有訊息</p>;",
+   "    case \"list\": return <ul aria-label=\"訊息\">{view.items.map((i) => <li key={i.id}>{i.text}</li>)}</ul>;",
+   "    case \"error\": return <Button onPress={view.retry}>再試一次</Button>;",
+   "  }",
+   "}"
+  ]
+ },
+ {
+  "name": "ok2 事件處理多步驟",
+  "layer": "apps",
+  "ext": "tsx",
+  "expect": "allow",
+  "code": [
+   "import { useState } from \"react\";",
+   "import { Button } from \"@f/ui\";",
+   "import { reportError, sendMessage } from \"@f/platform\";",
+   "export function Retry({ texts }: { readonly texts: readonly string[] }) {",
+   "  const [failed, setFailed] = useState<readonly string[]>([]);",
+   "  async function resend(): Promise<void> {",
+   "    const left: string[] = [];",
+   "    for (const t of texts) {",
+   "      try { await sendMessage(t); } catch (error) { reportError(error); left.push(t); }",
+   "    }",
+   "    setFailed(left);",
+   "  }",
+   "  return <section><p>{failed.length}</p><Button onPress={resend}>重送</Button></section>;",
+   "}"
+  ]
+ },
+ {
+  "name": "ok2 useMemo 計算",
+  "layer": "apps",
+  "ext": "tsx",
+  "expect": "allow",
+  "code": [
+   "import { useMemo } from \"react\";",
+   "export function Count({ items }: { readonly items: readonly number[] }) {",
+   "  const total = useMemo(() => items.reduce((a, b) => a + b, 0), [items]);",
+   "  return <p>{total}</p>;",
+   "}"
+  ]
+ },
+ {
+  "name": "ok2 單元測試",
+  "layer": "domain",
+  "ext": "ts",
+  "kind": "test",
+  "expect": "allow",
+  "code": [
+   "import { describe, expect, it } from \"vitest\";",
+   "describe(\"加法\", () => { it(\"1+1\", () => { expect(1 + 1).toBe(2); }); });"
+  ]
+ },
+ {
+  "name": "ok2 ui 捲到底元件",
+  "layer": "ui",
+  "ext": "tsx",
+  "expect": "allow",
+  "code": [
+   "import { useEffect, useRef, type ReactNode } from \"react\";",
+   "export function StickToBottom({ children, count }: { readonly children: ReactNode; readonly count: number }) {",
+   "  const end = useRef<HTMLDivElement>(null);",
+   "  useEffect(() => { end.current?.scrollIntoView({ block: \"end\" }); }, [count]);",
+   "  return <div>{children}<div ref={end} /></div>;",
+   "}"
+  ]
+ },
+ {
+  "name": "ok2 ui 按鈕",
+  "layer": "ui",
+  "ext": "tsx",
+  "expect": "allow",
+  "code": [
+   "import type { ReactNode } from \"react\";",
+   "import { reportError } from \"@f/platform\";",
+   "export function Button({ onPress, children }: { readonly onPress: () => void | Promise<void>; readonly children: ReactNode }) {",
+   "  const run = async (): Promise<void> => { try { await onPress(); } catch (error) { reportError(error); } };",
+   "  return <button type=\"button\" onClick={() => { run().catch(reportError); }}>{children}</button>;",
+   "}"
+  ]
+ },
+ {
+  "name": "ok2 platform 訂閱",
+  "layer": "platform",
+  "ext": "ts",
+  "expect": "allow",
+  "code": [
+   "export function onOnline(cb: () => void): () => void {",
+   "  window.addEventListener(\"online\", cb);",
+   "  return () => { window.removeEventListener(\"online\", cb); };",
+   "}"
+  ]
+ },
+ {
+  "name": "攻2 別名 Promise",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "const P = Promise;",
+   "export async function f(cb: () => void): Promise<void> { await P.resolve(); cb(); }"
+  ]
+ },
+ {
+  "name": "攻2 自製 thenable",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "export async function f(cb: () => void): Promise<void> { await { then(r: (v: number) => void) { r(1); } }; cb(); }"
+  ]
+ },
+ {
+  "name": "攻2 async 空函式當延遲",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "async function tick(): Promise<void> { }",
+   "export async function f(cb: () => void): Promise<void> { await tick(); cb(); }"
+  ]
+ },
+ {
+  "name": "攻2 async generator",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "async function* g(): AsyncGenerator<number> { yield 1; }",
+   "export async function f(cb: () => void): Promise<void> { for await (const _ of g()) { cb(); } }"
+  ]
+ },
+ {
+  "name": "攻2 Array.fromAsync",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "export async function f(cb: () => void): Promise<void> { await Array.fromAsync([1]); cb(); }"
+  ]
+ },
+ {
+  "name": "攻2 render 時直接做事",
+  "layer": "apps",
+  "ext": "tsx",
+  "expect": "block",
+  "code": [
+   "export function A({ go }: { readonly go: () => void }) { go(); return null; }"
+  ]
+ },
+ {
+  "name": "攻2 useState 初始值做事",
+  "layer": "apps",
+  "ext": "tsx",
+  "expect": "block",
+  "code": [
+   "import { useState } from \"react\";",
+   "export function A({ go }: { readonly go: () => number }) { const [x] = useState(() => { go(); return 0; }); return <p>{x}</p>; }"
+  ]
+ },
+ {
+  "name": "攻2 useMemo 做事",
+  "layer": "apps",
+  "ext": "tsx",
+  "expect": "block",
+  "code": [
+   "import { useMemo } from \"react\";",
+   "export function A({ go }: { readonly go: () => void }) { const x = useMemo(() => { go(); return 0; }, [go]); return <p>{x}</p>; }"
+  ]
+ },
+ {
+  "name": "攻2 render 用運算式做事",
+  "layer": "apps",
+  "ext": "tsx",
+  "expect": "block",
+  "knownGap": true,
+  "code": [
+   "export function A({ go }: { readonly go: () => number }) { const x = go(); return <p>{x}</p>; }"
+  ]
+ },
+ {
+  "name": "攻2 JSX 裡呼叫做事",
+  "layer": "apps",
+  "ext": "tsx",
+  "expect": "block",
+  "knownGap": true,
+  "code": [
+   "export function A({ go }: { readonly go: () => string }) { return <p>{go()}</p>; }"
+  ]
+ },
+ {
+  "name": "攻2 模組載入就做事",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "import { reportError } from \"@f/platform\";",
+   "reportError(\"x\");"
+  ]
+ },
+ {
+  "name": "攻2 模組載入就做事(賦值)",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "import { sendMessage } from \"@f/platform\";",
+   "export const p = sendMessage(\"x\");"
+  ]
+ },
+ {
+  "name": "攻2 class static block",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "import { reportError } from \"@f/platform\";",
+   "export class A { static { reportError(\"x\"); } }"
+  ]
+ },
+ {
+  "name": "攻2 多載假裝轉型",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "interface T { readonly n: number }",
+   "function cast(x: unknown): T;",
+   "function cast(x: unknown): unknown { return x; }",
+   "export const t = cast(\"x\");"
+  ]
+ },
+ {
+  "name": "攻2 let x! 假裝轉型",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "export function f(): string { let x!: string; return x; }"
+  ]
+ },
+ {
+  "name": "攻2 zod any 假裝轉型",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "import { z } from \"zod\";",
+   "export const f: (s: string) => void = z.any().parse(\"x\");"
+  ]
+ },
+ {
+  "name": "攻2 zod custom 拿 Function",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "import { z } from \"zod\";",
+   "const F = z.custom<(s: string) => () => unknown>().parse((() => undefined).constructor);",
+   "export const r = F(\"return setTimeout\")();"
+  ]
+ },
+ {
+  "name": "攻2 zod 改名",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "import { z as zz } from \"zod\";",
+   "export const F = zz.custom<(s: string) => void>().parse(\"x\");"
+  ]
+ },
+ {
+  "name": "攻2 zod transform 轉型",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "import { z } from \"zod\";",
+   "const k = z;",
+   "export const F = k.custom<(s: string) => void>().parse(\"x\");"
+  ]
+ },
+ {
+  "name": "攻2 中括號取 constructor",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "export const F: unknown = (() => undefined)[\"constructor\"];"
+  ]
+ },
+ {
+  "name": "攻2 變數取 constructor",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "const k = \"constructor\" as const;",
+   "export const F: unknown = (() => undefined)[k];"
+  ]
+ },
+ {
+  "name": "攻2 方法參數雙變",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "interface A { m(x: string | number): void }",
+   "export const a: A = { m(x: string): void { x.toUpperCase(); } };"
+  ]
+ },
+ {
+  "name": "攻2 陣列共變",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "knownGap": true,
+  "code": [
+   "export function f(): string[] { const a: string[] = []; const b: (string | number)[] = a; b.push(1); return a; }"
+  ]
+ },
+ {
+  "name": "攻2 模組層陣列當狀態",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "const locks: string[] = [];",
+   "export function lock(id: string): void { locks.push(id); }"
+  ]
+ },
+ {
+  "name": "攻2 模組層物件當狀態",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "const s = { locked: false };",
+   "export function lock(): void { s.locked = true; }"
+  ]
+ },
+ {
+  "name": "攻2 namespace",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "namespace N { export let n = 0; }",
+   "export function f(): void { N.n += 1; }"
+  ]
+ },
+ {
+  "name": "攻2 import = require",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "import t = require(\"node:timers\");",
+   "export const x = t;"
+  ]
+ },
+ {
+  "name": "攻2 匯入 js 檔",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "import { go } from \"./evil.js\";",
+   "export const x: unknown = go;"
+  ]
+ },
+ {
+  "name": "攻2 子路徑 react/jsx-runtime",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "import { jsx } from \"react/jsx-runtime\";",
+   "export const x: unknown = jsx;"
+  ]
+ },
+ {
+  "name": "攻2 ui 偷 ownerDocument",
+  "layer": "ui",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "export function f(el: HTMLElement): void { el.ownerDocument.defaultView?.setTimeout(() => undefined, 0); }"
+  ]
+ },
+ {
+  "name": "攻2 ui 元件自己計時",
+  "layer": "ui",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "export function f(): void { setTimeout(() => undefined, 0); }"
+  ]
+ },
+ {
+  "name": "攻2 ui 動畫當 timer",
+  "layer": "ui",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "export function f(el: HTMLElement, cb: () => void): void { el.animate([], 500).onfinish = cb; }"
+  ]
+ },
+ {
+  "name": "攻2 空陣列大迴圈",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "knownGap": true,
+  "code": [
+   "export function f(): number { return Array.from({ length: 1e9 }, () => 1).length; }"
+  ]
+ },
+ {
+  "name": "攻2 遞迴空轉",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "knownGap": true,
+  "code": [
+   "export function f(n: number): number { return n === 0 ? 0 : f(n - 1); }"
+  ]
+ },
+ {
+  "name": "攻2 catch 裡別的函式 throw",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "import { sendMessage } from \"@f/platform\";",
+   "export async function f(): Promise<void> { try { await sendMessage(\"x\"); } catch { const g = (): never => { throw new Error(\"x\"); }; if (g.length > 9) { g(); } } }"
+  ]
+ },
+ {
+  "name": "攻2 自製 reportError",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "import { sendMessage } from \"@f/platform\";",
+   "function reportError(e: unknown): unknown { return e; }",
+   "export async function f(): Promise<void> { try { await sendMessage(\"x\"); } catch (e) { reportError(e); } }"
+  ]
+ },
+ {
+  "name": "攻2 try/finally return 吞錯",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "import { sendMessage } from \"@f/platform\";",
+   "export async function f(): Promise<number> { try { await sendMessage(\"x\"); return 1; } finally { return 0; } }"
+  ]
+ },
+ {
+  "name": "攻2 domain 用 async",
+  "layer": "domain",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "export async function f(g: () => Promise<void>): Promise<void> { await g(); }"
+  ]
+ },
+ {
+  "name": "攻2 domain 匯入 platform",
+  "layer": "domain",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "import { sendMessage } from \"@f/platform\";",
+   "export const x = sendMessage;"
+  ]
+ },
+ {
+  "name": "攻2 default 分支逃避窮舉",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "type S = { readonly kind: \"a\" } | { readonly kind: \"b\" } | { readonly kind: \"c\" };",
+   "export function f(s: S): number { switch (s.kind) { case \"a\": return 1; default: return 0; } }"
+  ]
+ },
+ {
+  "name": "攻2 用 if 逃避窮舉",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "knownGap": true,
+  "code": [
+   "type S = { readonly kind: \"a\" } | { readonly kind: \"b\" } | { readonly kind: \"c\" };",
+   "export function f(s: S): number { if (s.kind === \"a\") { return 1; } return 0; }"
+  ]
+ },
+ {
+  "name": "攻3 索引簽章變出 Function（字串由外部傳入）",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "type Timer = (f: () => void, ms: number) => void;",
+   "type Level2 = Readonly<Record<string, (code: string) => () => Timer>>;",
+   "export function later(key: string, cb: () => void): void {",
+   "  const box: Readonly<Record<string, Level2>> = {};",
+   "  const make = box[key]?.[key];",
+   "  if (make !== undefined) { make(\"return setTimeout\")()(cb, 10); }",
+   "}"
+  ]
+ },
+ {
+  "name": "攻3 索引簽章變出 Function（拼字串）",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "type Timer = (f: () => void, ms: number) => void;",
+   "type Level2 = Readonly<Record<string, (code: string) => () => Timer>>;",
+   "export function later(cb: () => void): void {",
+   "  const key = [\"con\", \"structor\"].join(\"\");",
+   "  const box: Readonly<Record<string, Level2>> = {};",
+   "  const make = box[key]?.[key];",
+   "  if (make !== undefined) { make(\"return setTimeout\")()(cb, 10); }",
+   "}"
+  ]
+ },
+ {
+  "name": "攻4 G1 g1e.ts",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "async function tick(depth: number): Promise<void> {",
+   "  if (depth > 0) {",
+   "    await tick(depth - 1);",
+   "  }",
+   "}",
+   "export function attack(cb: () => void): void {",
+   "  const run = async (): Promise<void> => {",
+   "    await tick(1);",
+   "    cb();",
+   "  };",
+   "  const launch = (): unknown => run();",
+   "  launch();",
+   "}"
+  ]
+ },
+ {
+  "name": "攻4 G1 g1f.ts",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "interface Held {",
+   "  readonly job: unknown;",
+   "}",
+   "function hold(job: unknown): Held {",
+   "  return { job };",
+   "}",
+   "export function attack(cb: () => void): void {",
+   "  const run = async (depth: number): Promise<void> => {",
+   "    if (depth > 0) {",
+   "      await run(depth - 1);",
+   "      cb();",
+   "    }",
+   "  };",
+   "  hold(run(1));",
+   "}"
+  ]
+ },
+ {
+  "name": "攻4 G4 g4a.ts",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "const digits = /x/gu;",
+   "export function bump(): number {",
+   "  digits.test(\"xxxxxxxxxxxxxxxxxxxx\");",
+   "  return digits.lastIndex;",
+   "}"
+  ]
+ },
+ {
+  "name": "攻4 G6 g6a.ts",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "export function forge(): string {",
+   "  return JSON.stringify(undefined);",
+   "}"
+  ]
+ },
+ {
+  "name": "攻4 G6 g6b.ts",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "knownGap": true,
+  "code": [
+   "interface Named {",
+   "  readonly name: string;",
+   "}",
+   "interface Aged {",
+   "  readonly age: number;",
+   "}",
+   "export function forge(): string {",
+   "  const base: Named = { name: \"a\" };",
+   "  const wide = { age: 1, name: 2 };",
+   "  const patch: Aged = wide;",
+   "  const merged: Named = { ...base, ...patch };",
+   "  return merged.name;",
+   "}"
+  ]
+ },
+ {
+  "name": "攻4 G6 g6c.ts",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "export function forge(): string {",
+   "  const found: string[] = [];",
+   "  \"abc\".replace(/b/u, (_whole: string, offset: string) => {",
+   "    found.push(offset);",
+   "    return offset;",
+   "  });",
+   "  return found[0] ?? \"none\";",
+   "}"
+  ]
+ },
+ {
+  "name": "攻4 G6 g6i.ts",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "export function forge(): string {",
+   "  const wide = { title: 1 };",
+   "  const empty: object = wide;",
+   "  const typed: { readonly title?: string } = empty;",
+   "  return typed.title ?? \"none\";",
+   "}"
+  ]
+ },
+ {
+  "name": "攻4 G6 g6j.ts",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "export function forge(): string {",
+   "  for (const item of Array.from<string>({ length: 1 })) {",
+   "    return item;",
+   "  }",
+   "  return \"none\";",
+   "}"
+  ]
+ },
+ {
+  "name": "攻4 G3 g3i.ts",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "type Make = (code: string) => () => void;",
+   "function pick<K extends string>(source: { readonly [P in K]: unknown }, name: K): unknown {",
+   "  return source[name];",
+   "}",
+   "export function attack(): void {",
+   "  const wide = { make: pick(async () => {",
+   "    await attackLater();",
+   "  }, \"constructor\") };",
+   "  const plain: object = wide;",
+   "  const typed: { readonly make?: Make } = plain;",
+   "  typed.make?.(\"__escape()\")();",
+   "}",
+   "async function attackLater(): Promise<void> {",
+   "  await attackLater();",
+   "}"
+  ]
+ },
+ {
+  "name": "攻4 G3 g3j.ts",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "type Make = (code: string) => () => void;",
+   "export function attack(): void {",
+   "  const key = \"constructor\";",
+   "  const { [key]: make } = attack;",
+   "  const plain: object = { make };",
+   "  const typed: { readonly make?: Make } = plain;",
+   "  typed.make?.(\"__escape()\")();",
+   "}"
+  ]
+ },
+ {
+  "name": "攻4 G4 g4e.ts",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "import { createContext } from \"react\";",
+   "const Holder = createContext(0);",
+   "export function bump(): number {",
+   "  const next = Number(Holder.displayName ?? \"0\") + 1;",
+   "  Holder.displayName = String(next);",
+   "  return next;",
+   "}"
+  ]
+ },
+ {
+  "name": "攻4 G4 g4h.ts",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "export function bump(): number {",
+   "  const next = Number(Object.getOwnPropertyDescriptor(bump, \"total\")?.value ?? 0) + 1;",
+   "  Object.defineProperty(bump, \"total\", { value: next, configurable: true });",
+   "  return next;",
+   "}"
+  ]
+ },
+ {
+  "name": "攻4 G4 g4i.ts",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "const shape = { total: 0 } as const;",
+   "export function bump(): number {",
+   "  const plain: object = shape;",
+   "  const open: { total?: number } = plain;",
+   "  open.total = (open.total ?? 0) + 1;",
+   "  return open.total;",
+   "}"
+  ]
+ },
+ {
+  "name": "攻4 G5 g5c.ts",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "import { reportError, sendMessage } from \"@f/platform\";",
+   "export async function attack(): Promise<void> {",
+   "  try {",
+   "    await sendMessage(\"x\");",
+   "  } catch (error) {",
+   "    if (error === undefined) {",
+   "      reportError(error);",
+   "    }",
+   "  }",
+   "}"
+  ]
+ },
+ {
+  "name": "ok4 解析 JSON",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "allow",
+  "code": [
+   "import { z } from \"zod\";",
+   "import { parseJson, type Parsed } from \"@f/platform\";",
+   "const Message = z.discriminatedUnion(\"type\", [",
+   "  z.object({ type: z.literal(\"text\"), text: z.string() }),",
+   "  z.object({ type: z.literal(\"ended\") }),",
+   "]);",
+   "export function read(text: string): Parsed<z.output<typeof Message>> { return parseJson(text, Message); }"
+  ]
+ },
+ {
+  "name": "ok4 搜尋框",
+  "layer": "apps",
+  "ext": "tsx",
+  "expect": "allow",
+  "code": [
+   "import { useState } from \"react\";",
+   "import { TextField, useDebounced } from \"@f/ui\";",
+   "export function Search({ onSearch }: { readonly onSearch: (q: string) => void }) {",
+   "  const [q, setQ] = useState(\"\");",
+   "  const search = useDebounced(onSearch, 300);",
+   "  return <TextField value={q} onChange={(v) => { setQ(v); search(v); }} />;",
+   "}"
+  ]
+ },
+ {
+  "name": "ok4 依使用者當地日期分組",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "allow",
+  "code": [
+   "import { dayKey } from \"@f/platform\";",
+   "interface Item { readonly id: string; readonly at: string }",
+   "export function byDay(items: readonly Item[], timeZone: string): ReadonlyMap<string, readonly Item[]> {",
+   "  const out = new Map<string, readonly Item[]>();",
+   "  for (const i of items) { const k = dayKey(i.at, timeZone); out.set(k, [...(out.get(k) ?? []), i]); }",
+   "  return out;",
+   "}"
+  ]
+ },
+ {
+  "name": "ok4 未讀數",
+  "layer": "apps",
+  "ext": "tsx",
+  "expect": "allow",
+  "code": [
+   "export function Unread({ ids, lastReadId }: { readonly ids: readonly string[]; readonly lastReadId: string | null }) {",
+   "  const at = lastReadId === null ? -1 : ids.indexOf(lastReadId);",
+   "  const n = ids.length - 1 - at;",
+   "  return n > 0 ? <span aria-label=\"未讀\">{n}</span> : null;",
+   "}"
+  ]
+ },
+ {
+  "name": "ok4 陣列取值",
+  "layer": "domain",
+  "ext": "ts",
+  "expect": "allow",
+  "code": [
+   "export function first(xs: readonly string[]): string | null { return xs[0] ?? null; }"
+  ]
+ },
+ {
+  "name": "ok4 用聯集鍵取值",
+  "layer": "domain",
+  "ext": "ts",
+  "expect": "allow",
+  "code": [
+   "const LABEL = { waiting: \"等候中\", talking: \"對話中\", ended: \"已結束\" } as const;",
+   "export function label(s: \"waiting\" | \"talking\" | \"ended\"): string { return LABEL[s]; }"
+  ]
+ },
+ {
+  "name": "ok4 await 後回傳值",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "allow",
+  "code": [
+   "import { retry, sendMessage } from \"@f/platform\";",
+   "export async function send(text: string): Promise<void> { await retry(() => sendMessage(text), 3); }"
+  ]
+ },
+ {
+  "name": "ok4 取代文字",
+  "layer": "domain",
+  "ext": "ts",
+  "expect": "allow",
+  "code": [
+   "export function mask(s: string): string { return s.replace(/\\d/gu, (d) => (d === \"0\" ? \"0\" : \"*\")); }"
+  ]
+ },
+ {
+  "name": "ok4 回報後回傳",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "allow",
+  "code": [
+   "import { reportError, sendMessage } from \"@f/platform\";",
+   "export async function trySend(text: string): Promise<\"sent\" | \"failed\"> {",
+   "  try { await sendMessage(text); return \"sent\"; } catch (error) { reportError(error); return \"failed\"; }",
+   "}"
+  ]
+ },
+ {
+  "name": "突 屬性 setInterval",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "export function f(x: { readonly setInterval: (g: () => void) => void }): void { x.setInterval(() => undefined); }"
+  ]
+ },
+ {
+  "name": "突 屬性 setImmediate",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "export function f(x: { readonly setImmediate: (g: () => void) => void }): void { x.setImmediate(() => undefined); }"
+  ]
+ },
+ {
+  "name": "突 屬性 queueMicrotask",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "export function f(x: { readonly queueMicrotask: (g: () => void) => void }): void { x.queueMicrotask(() => undefined); }"
+  ]
+ },
+ {
+  "name": "突 屬性 requestAnimationFrame",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "export function f(x: { readonly requestAnimationFrame: (g: () => void) => void }): void { x.requestAnimationFrame(() => undefined); }"
+  ]
+ },
+ {
+  "name": "突 屬性 requestIdleCallback",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "export function f(x: { readonly requestIdleCallback: (g: () => void) => void }): void { x.requestIdleCallback(() => undefined); }"
+  ]
+ },
+ {
+  "name": "突 屬性 __proto__",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "export function f(x: { readonly __proto__: (g: () => void) => void }): void { x.__proto__(() => undefined); }"
+  ]
+ },
+ {
+  "name": "突 屬性 setTimeout",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "export function f(x: { readonly setTimeout: number }): number { return x.setTimeout; }"
+  ]
+ },
+ {
+  "name": "突 屬性 postTask",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "export function f(x: { readonly postTask: number }): number { return x.postTask; }"
+  ]
+ },
+ {
+  "name": "突 屬性 defaultView",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "export function f(x: { readonly defaultView: number }): number { return x.defaultView; }"
+  ]
+ },
+ {
+  "name": "突 屬性 ownerDocument",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "export function f(x: { readonly ownerDocument: number }): number { return x.ownerDocument; }"
+  ]
+ },
+ {
+  "name": "突 屬性 animate",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "export function f(x: { readonly animate: number }): number { return x.animate; }"
+  ]
+ },
+ {
+  "name": "突 屬性 onfinish",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "export function f(x: { readonly onfinish: number }): number { return x.onfinish; }"
+  ]
+ },
+ {
+  "name": "突 屬性 constructor",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "export function f(x: { readonly constructor: number }): number { return x.constructor; }"
+  ]
+ },
+ {
+  "name": "突 索引簽章",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "export interface A { readonly [k: string]: number }"
+  ]
+ },
+ {
+  "name": "突 物件屬性 ++",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "export function f(x: { n: number }): void { x.n++; }"
+  ]
+ },
+ {
+  "name": "突 delete",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "export function f(x: { n?: number }): void { delete x.n; }"
+  ]
+ },
+ {
+  "name": "突 enum",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "export enum E { A, B }"
+  ]
+ },
+ {
+  "name": "突 import.meta",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "export const u: unknown = import.meta;"
+  ]
+ },
+ {
+  "name": "突 do while",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "export function f(n: number): number { let i = 0; do { i += 1; } while (i < n); return i; }"
+  ]
+ },
+ {
+  "name": "突 for 迴圈",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "export function f(n: number): number { let s = 0; for (let i = 0; i < n; i += 1) { s += i; } return s; }"
+  ]
+ },
+ {
+  "name": "突 for in",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "export function f(x: { readonly a: number }): string { let s = \"\"; for (const k in x) { s += k; } return s; }"
+  ]
+ },
+ {
+  "name": "突 export let",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "export let n = 0;",
+   "export function f(): void { n += 1; }"
+  ]
+ },
+ {
+  "name": "突 模組層 new Map",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "const m = new Map<string, number>();",
+   "export function f(k: string): void { m.set(k, 1); }"
+  ]
+ },
+ {
+  "name": "突 模組層 export new Set",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "export const m = new Set<string>();"
+  ]
+ },
+ {
+  "name": "突 模組層 new Array",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "export const m = new Array<string>();"
+  ]
+ },
+ {
+  "name": "突 模組層 export 陣列",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "export const m: string[] = [];"
+  ]
+ },
+ {
+  "name": "突 ui 的 dangerouslySetInnerHTML",
+  "layer": "ui",
+  "ext": "tsx",
+  "expect": "block",
+  "code": [
+   "export function A() { return <p dangerouslySetInnerHTML={{ __html: \"x\" }} />; }"
+  ]
+ },
+ {
+  "name": "突 ui 的 declare",
+  "layer": "ui",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "declare function x(): void;",
+   "export function f(): void { x(); }"
+  ]
+ },
+ {
+  "name": "突 ui 的動態 import",
+  "layer": "ui",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "export async function f(): Promise<unknown> { return await import(\"react\"); }"
+  ]
+ },
+ {
+  "name": "突 ui 的型別守衛",
+  "layer": "ui",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "export function isA(x: unknown): x is string { return x !== undefined; }"
+  ]
+ },
+ {
+  "name": "突 ui 的 addEventListener",
+  "layer": "ui",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "export function f(el: HTMLElement): void { el.addEventListener(\"x\", () => undefined); }"
+  ]
+ },
+ {
+  "name": "突 declare const",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "declare const x: number;",
+   "export const y = x;"
+  ]
+ },
+ {
+  "name": "突 declare module",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "declare module \"zz\" { const a: number; export default a; }",
+   "export {};"
+  ]
+ },
+ {
+  "name": "突 函式多載",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "export function f(x: string): string;",
+   "export function f(x: number): string;",
+   "export function f(x: string | number): string { return String(x); }"
+  ]
+ },
+ {
+  "name": "突 型別守衛",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "export function isA(x: string | number): x is string { return typeof x === \"string\"; }"
+  ]
+ },
+ {
+  "name": "突 Record<string>",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "export type A = Readonly<Record<string, number>>;"
+  ]
+ },
+ {
+  "name": "突 namespace",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "export namespace N { export type A = string }"
+  ]
+ },
+ {
+  "name": "突 尖括號轉型",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "export function f(x: unknown): string { return <string>x; }"
+  ]
+ },
+ {
+  "name": "突 import 等號",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "import z = require(\"zod\");",
+   "export const y = z;"
+  ]
+ },
+ {
+  "name": "突 class",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "export class A { readonly n: number = 1; get m(): number { return this.n; } }"
+  ]
+ },
+ {
+  "name": "突 class 運算式",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "export const A = class { readonly n: number = 1; get m(): number { return this.n; } };"
+  ]
+ },
+ {
+  "name": "突 then",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "export async function f(p: Promise<number>): Promise<number> { return await p.then((n) => n + 1); }"
+  ]
+ },
+ {
+  "name": "突 generator",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "export function* g() { yield 1; }"
+  ]
+ },
+ {
+  "name": "突 for await",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "export async function f(x: AsyncIterable<number>): Promise<number> { let s = 0; for await (const n of x) { s += n; } return s; }"
+  ]
+ },
+ {
+  "name": "突 addEventListener",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "export function f(x: { readonly addEventListener: (n: string) => void }): void { x.addEventListener(\"a\"); }"
+  ]
+ },
+ {
+  "name": "突 z.any",
+  "layer": "domain",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "import { z } from \"zod\";",
+   "export const A = z.object({ a: z.any() });"
+  ]
+ },
+ {
+  "name": "突 解構 z.custom",
+  "layer": "domain",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "import { z } from \"zod\";",
+   "const { custom } = z;",
+   "export { custom };"
+  ]
+ },
+ {
+  "name": "突 javascript 網址",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "export const u = \"javascript:alert(1)\";"
+  ]
+ },
+ {
+  "name": "突 void 丟棄",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "export function f(g: () => number): void { void g(); }"
+  ]
+ },
+ {
+  "name": "突 object 型別",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "export function f(x: object): string { return String(x === null); }"
+  ]
+ },
+ {
+  "name": "突 fromAsync",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "export async function f(x: { readonly fromAsync: () => Promise<void> }): Promise<void> { await x.fromAsync(); }"
+  ]
+ },
+ {
+  "name": "突 finally return",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "export function f(): number { try { return 1; } finally { return 0; } }"
+  ]
+ },
+ {
+  "name": "突 eval",
+  "layer": "platform",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "export function f(s: string): unknown { return eval(s); }"
+  ]
+ },
+ {
+  "name": "突 動態取屬性",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "export function f(x: { readonly a: number; readonly b: number }, k: \"a\" | \"b\" | \"constructor\"): unknown { return x[k]; }"
+  ]
+ },
+ {
+  "name": "突 入口檔以外最外層呼叫",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "import { reportError } from \"@f/platform\";",
+   "reportError(1);"
+  ]
+ },
+ {
+  "name": "突 platform 吞錯",
+  "layer": "platform",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "export async function f(g: () => Promise<void>): Promise<void> { try { await g(); } catch (error) { if (error === null) { throw error; } } }"
+  ]
+ },
+ {
+  "name": "突 platform 回傳失敗但丟掉錯誤",
+  "layer": "platform",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "export async function f(g: () => Promise<void>): Promise<{ readonly ok: boolean }> { try { await g(); return { ok: true }; } catch { return { ok: false }; } }"
+  ]
+ },
+ {
+  "name": "突 platform 用 ok:true 掩蓋錯誤",
+  "layer": "platform",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "export async function f(g: () => Promise<void>): Promise<unknown> { try { await g(); return 1; } catch (error) { return { ok: true, error }; } }"
+  ]
+ },
+ {
+  "name": "ok5 platform 失敗變成結果",
+  "layer": "platform",
+  "ext": "ts",
+  "expect": "allow",
+  "code": [
+   "type R = { readonly ok: true } | { readonly ok: false; readonly error: unknown };",
+   "export async function f(g: () => Promise<void>): Promise<R> { try { await g(); return { ok: true }; } catch (error) { return { ok: false, error }; } }"
+  ]
+ },
+ {
+  "name": "ok5 函式內的 Map",
+  "layer": "domain",
+  "ext": "ts",
+  "expect": "allow",
+  "code": [
+   "export function count(xs: readonly string[]): number { const m = new Map<string, number>(); for (const x of xs) { m.set(x, 1); } return m.size; }"
+  ]
+ },
+ {
+  "name": "ok5 as const 物件與陣列",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "allow",
+  "code": [
+   "export const A = { a: 1 } as const;",
+   "export const B = [1, 2] as const;"
+  ]
+ },
+ {
+  "name": "ok5 型別匯入",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "allow",
+  "code": [
+   "import type { ReactNode } from \"react\";",
+   "export type P = { readonly children: ReactNode };"
+  ]
+ },
+ {
+  "name": "ok5 區域變數累加",
+  "layer": "domain",
+  "ext": "ts",
+  "expect": "allow",
+  "code": [
+   "export function sum(xs: readonly number[]): number { let s = 0; for (const x of xs) { s += x; } return s; }"
+  ]
+ },
+ {
+  "name": "e 由 props 複製成 state",
+  "layer": "ui",
+  "ext": "tsx",
+  "expect": "block",
+  "code": [
+   "import { useEffect, useState } from \"react\";",
+   "export function A({ a, b }: { readonly a: string; readonly b: string }) { const [c, setC] = useState(\"\"); useEffect(() => { setC(a + b); }, [a, b]); return <p>{c}</p>; }"
+  ]
+ },
+ {
+  "name": "e 用 effect 通知父層",
+  "layer": "ui",
+  "ext": "tsx",
+  "expect": "block",
+  "code": [
+   "import { useEffect, useState } from \"react\";",
+   "export function A({ on }: { readonly on: (n: number) => void }) { const [n, setN] = useState(0); useEffect(() => { on(n); }, [n, on]); return <button type=\"button\" onClick={() => { setN(n + 1); }}>x</button>; }"
+  ]
+ }
+]
