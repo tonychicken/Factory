@@ -1,8 +1,6 @@
 // 給負責人看的中文版。產物，不准手改。
-import { writeFileSync } from "node:fs";
 import { assumptions, checkSpec, eventTitle, row, strength } from "./check.ts";
-import type { Decision, Flow } from "./define.ts";
-import { spec } from "../../specs/index.ts";
+import type { Decision, Flow, Spec } from "./define.ts";
 
 const from = (d: Decision): string => (d.from === "owner" ? d.ref : d.from === "rule" ? d.ref : d.from === "convention" ? "慣例" : "**假設**");
 
@@ -23,10 +21,11 @@ function flowText(flow: Flow): string {
   return [`## ${flow.title}`, "", flow.kind === "lifecycle" ? `只往前走；什麼都不做的實作會被 ${String(Math.round(strength(flow) * 100))}% 的格子抓到。` : "畫面狀態，可以來回。", "", `一開始：${who.map(([k, t]) => `${t}看到${flow.start.see[k] ?? ""}`).join("；")}`, "", ...parts].join("\n");
 }
 
-const problems = checkSpec(spec);
-const asked = assumptions(spec);
-const md = [
-  "# v0.1 規格預覽（由規格自動產生，不要手改）", "",
+export function render(title: string, spec: Spec): string {
+  const problems = checkSpec(spec);
+  const asked = assumptions(spec);
+  return [
+  `# ${title}（由規格自動產生，不要手改）`, "",
   `檢查結果：${problems.length === 0 ? "全過" : problems.map((p) => `${p.where} ${p.message}`).join("；")}`, "",
   "## 等負責人決定的假設", "", "| # | 問題 | 目前選 |", "|---|---|---|", ...asked.map((a, i) => `| S${String(i + 1)} | ${a.question} | ${a.chosen} |`), "",
   "## 業務規則", "", "| 規則 | 內容 | 例子 | 誰決定 |", "|---|---|---|---|",
@@ -35,7 +34,4 @@ const md = [
   ...spec.contents.map((c) => `| ${c.title} | ${c.maintainer} | ${c.refresh} | ${c.whenEmpty} | ${c.whenError} |`), "",
   ...spec.flows.map(flowText),
 ].join("\n");
-writeFileSync(new URL("../../specs/preview.md", import.meta.url), md);
-console.log(`問題 ${String(problems.length)}，假設 ${String(asked.length)}`);
-for (const p of problems) { console.log(`${p.code} ${p.where}：${p.message}`); }
-process.exitCode = problems.length === 0 ? 0 : 1;
+}

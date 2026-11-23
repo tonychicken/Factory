@@ -1,12 +1,12 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { assumptions, checkFlow, checkSpec, LIMITS, strength } from "./check.ts";
-import { cases, compare, diff, REFUSED, type Outcome } from "./cases.ts";
-import { drift, freeze, sameBaseline, type Change } from "./freeze.ts";
-import type { Flow, Spec } from "./define.ts";
-import { spec } from "../../specs/index.ts";
-import { conversation } from "../../specs/conversation.ts";
-import { message, messageMark } from "../../specs/message.ts";
+import { assumptions, checkFlow, checkSpec, LIMITS, strength } from "../factory/spec/check.ts";
+import { cases, compare, diff, REFUSED, type Outcome } from "../factory/spec/cases.ts";
+import { drift, freeze, sameBaseline, type Change } from "../factory/spec/freeze.ts";
+import type { Flow, Spec } from "../factory/spec/define.ts";
+import { spec } from "./index.ts";
+import { conversation } from "./conversation.ts";
+import { message, messageMark } from "./message.ts";
 
 const codes = (x: readonly { readonly code: string }[]): string[] => [...new Set(x.map((p) => p.code))].sort();
 const broken = (f: Flow, edit: (m: any) => void): Flow => { const c = structuredClone(f); edit(c); return c; };

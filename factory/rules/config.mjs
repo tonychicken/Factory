@@ -8,9 +8,6 @@ import effect from "eslint-plugin-react-you-might-not-need-an-effect";
 import unsanitized from "eslint-plugin-no-unsanitized";
 import f from "./plugin.mjs";
 
-const pure = { lib: ["lib.es2024.d.ts"], types: [] };
-const dom = { lib: ["lib.es2024.d.ts", "lib.dom.d.ts"], types: [] };
-export const tsOptions = { contracts: pure, domain: pure, apps: pure, ui: dom, platform: dom };
 
 const errorAll = (rules) => Object.fromEntries(Object.entries(rules).map(([k, v]) => [k, Array.isArray(v) ? ["error", ...v.slice(1)] : "error"]));
 

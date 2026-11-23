@@ -1,0 +1,1 @@
+{ "rules": { "color-no-hex": true, "color-named": "never", "declaration-no-important": true, "function-disallowed-list": ["rgb", "rgba", "hsl", "hsla", "oklch"], "function-url-scheme-allowed-list": [], "no-unknown-animations": true, "property-disallowed-list": ["transition-delay", "animation-delay"] } }

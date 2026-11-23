@@ -9,12 +9,15 @@
     "contracts",
     "domain",
     "platform",
+    "server",
     "ui",
     "apps/*"
   ],
   "scripts": {
     "check": "node factory/check.mjs",
-    "spec": "node factory/spec/render.ts"
+    "drill": "node factory/drill.mjs",
+    "spec": "node specs/render.ts",
+    "rules:prove": "node factory/rules/cases/prove.mjs"
   },
   "devDependencies": {
     "@types/node": "26.6.6",

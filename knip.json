@@ -1,0 +1,1 @@
+{ "workspaces": { ".": { "entry": ["factory/**/*.test.mjs", "specs/**/*.test.ts"], "project": ["factory/**/*.{mjs,ts}", "specs/**/*.ts"], "ignore": ["factory/rules/cases/stubs/**"] }, "apps/visitor": { "project": ["src/**/*.{ts,tsx}"] } }, "ignoreDependencies": ["dependency-cruiser", "jscpd", "stylelint"], "ignoreExportsUsedInFile": true }
