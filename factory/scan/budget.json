@@ -1,0 +1,9 @@
+{
+  "platform/timer": 1,
+  "server/timer": 0,
+  "ui/effect": 3,
+  "ui/ref": 3,
+  "platform/lines": 110,
+  "server/lines": 10,
+  "ui/lines": 75
+}

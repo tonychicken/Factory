@@ -1,1 +1,1 @@
-{ "files": [], "references": [{ "path": "./contracts" }, { "path": "./domain" }, { "path": "./platform" }, { "path": "./ui" }, { "path": "./apps/visitor" }] }
+{ "files": [], "references": [{ "path": "./contracts" }, { "path": "./domain" }, { "path": "./platform" }, { "path": "./server" }, { "path": "./ui" }, { "path": "./apps/visitor" }] }

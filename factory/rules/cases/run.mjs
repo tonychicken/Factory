@@ -8,8 +8,8 @@ const here = import.meta.dirname.replaceAll("\\", "/");
 export const root = path.resolve(here, "../../..").replaceAll("\\", "/");
 const pure = ["lib.es2024.d.ts"];
 const dom = ["lib.es2024.d.ts", "lib.dom.d.ts"];
-const LIB = { contracts: pure, domain: pure, apps: pure, ui: dom, platform: dom };
-const DIR = { contracts: "contracts", domain: "domain", apps: "apps/visitor/src", ui: "ui", platform: "platform" };
+const LIB = { contracts: pure, domain: pure, apps: pure, gateway: pure, server: pure, data: pure, ui: dom, platform: dom };
+const DIR = { contracts: "contracts", domain: "domain", apps: "apps/visitor/src", gateway: "apps/gateway/src", ui: "ui", platform: "platform", server: "server", data: "data" };
 const stub = (n) => [`${here}/stubs/${n}.d.ts`];
 const cache = new Map();
 
@@ -20,8 +20,8 @@ export function prepare(c, i) {
   const options = {
     target: ts.ScriptTarget.ES2024, module: ts.ModuleKind.ESNext, moduleResolution: ts.ModuleResolutionKind.Bundler, jsx: ts.JsxEmit.ReactJSX,
     strict: true, noUncheckedIndexedAccess: true, exactOptionalPropertyTypes: true, noImplicitOverride: true, noUncheckedSideEffectImports: true,
-    isolatedModules: true, noEmit: true, skipLibCheck: true, rootDir: root, types: [], lib: LIB[c.layer],
-    paths: { "@f/platform": stub("platform"), "@f/ui": stub("ui"), "@f/contracts": stub("contracts") },
+    isolatedModules: true, noEmit: true, skipLibCheck: true, rootDir: root, types: c.layer === "server" ? ["node"] : [], lib: LIB[c.layer],
+    paths: { "@f/platform": stub("platform"), "@f/ui": stub("ui"), "@f/contracts": stub("contracts"), "@f/server": stub("server"), "@f/data": stub("data"), "@f/domain": stub("domain"), hono: stub("hono"), "drizzle-orm/pg-core": stub("drizzle") },
   };
   const host = ts.createCompilerHost(options);
   const { getSourceFile, fileExists, readFile } = host;

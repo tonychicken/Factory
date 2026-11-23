@@ -1,6 +1,6 @@
 // R27：產品資料夾只能放核准的檔案；HTML 只能有一個指向 /src/ 的 module script
-const ROOTS = /^(apps|domain|contracts|ui|platform)\//;
-const OK = /^(apps|ui|platform)\/[^.]+(\.test)?\.(ts|tsx|css)$|^(domain|contracts)\/[^.]+(\.test)?\.ts$|^apps\/[\w-]+\/index\.html$|^apps\/[\w-]+\/public\/[\w-]+\.(png|svg|webp|ico|woff2)$/;
+const ROOTS = /^(apps|domain|contracts|ui|platform|server|data)\//;
+const OK = /^(apps|ui|platform)\/[^.]+(\.test)?\.(ts|tsx|css)$|^(domain|contracts|server|data)\/[^.]+(\.test)?\.ts$|^apps\/[\w-]+\/index\.html$|^apps\/[\w-]+\/public\/[\w-]+\.(png|svg|webp|ico|woff2)$/;
 export function checkFiles(files) {
   const out = [];
   for (const [p, text] of files) {

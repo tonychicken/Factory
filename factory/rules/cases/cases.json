@@ -2655,5 +2655,322 @@
    "import { useEffect, useState } from \"react\";",
    "export function A({ on }: { readonly on: (n: number) => void }) { const [n, setN] = useState(0); useEffect(() => { on(n); }, [n, on]); return <button type=\"button\" onClick={() => { setN(n + 1); }}>x</button>; }"
   ]
+ },
+ {
+  "name": "伺服 gateway 處理",
+  "layer": "gateway",
+  "ext": "ts",
+  "expect": "allow",
+  "code": [
+   "import { append } from \"@f/data\";",
+   "import { next } from \"@f/domain\";",
+   "import { newId } from \"@f/server\";",
+   "export async function handle(text: string): Promise<string> {",
+   "  await append(newId(), text);",
+   "  return next(\"waiting\");",
+   "}"
+  ]
+ },
+ {
+  "name": "伺服 gateway 入口",
+  "layer": "gateway",
+  "ext": "ts",
+  "kind": "entry",
+  "expect": "allow",
+  "code": [
+   "import { append } from \"@f/data\";",
+   "import { newId, start } from \"@f/server\";",
+   "async function handle(text: string): Promise<string> {",
+   "  await append(newId(), text);",
+   "  return text;",
+   "}",
+   "start(handle);"
+  ]
+ },
+ {
+  "name": "伺服 gateway 一般檔在最外層呼叫",
+  "layer": "gateway",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "import { start } from \"@f/server\";",
+   "start(async (t) => { await Promise.resolve(); return t; });"
+  ]
+ },
+ {
+  "name": "伺服 gateway 直接用 hono",
+  "layer": "gateway",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "import { Hono } from \"hono\";",
+   "export const a = Hono;"
+  ]
+ },
+ {
+  "name": "伺服 gateway 直接用資料庫套件",
+  "layer": "gateway",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "import { text } from \"drizzle-orm/pg-core\";",
+   "export const a = text;"
+  ]
+ },
+ {
+  "name": "伺服 gateway 用瀏覽器邊界",
+  "layer": "gateway",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "import { debounce } from \"@f/platform\";",
+   "export const a = debounce;"
+  ]
+ },
+ {
+  "name": "伺服 gateway 用 ui",
+  "layer": "gateway",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "import { Button } from \"@f/ui\";",
+   "export const a = Button;"
+  ]
+ },
+ {
+  "name": "伺服 gateway 用 process",
+  "layer": "gateway",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "export const e: unknown = process.env;"
+  ]
+ },
+ {
+  "name": "伺服 gateway 用 setTimeout",
+  "layer": "gateway",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "setTimeout(() => undefined, 1);",
+   "export {};"
+  ]
+ },
+ {
+  "name": "伺服 apps 直接用伺服器邊界",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "import { newId } from \"@f/server\";",
+   "export const a = newId;"
+  ]
+ },
+ {
+  "name": "伺服 apps 直接用資料層",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "import { append } from \"@f/data\";",
+   "export const a = append;"
+  ]
+ },
+ {
+  "name": "伺服 apps 引用別的 app",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "import type { handle } from \"../../gateway/src/handle\";",
+   "export type A = handle;"
+  ],
+  "mustBe": "f/import-allowlist"
+ },
+ {
+  "name": "伺服 apps 用相對路徑跑到 platform",
+  "layer": "apps",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "import type { reportError } from \"../../../platform/report\";",
+   "export type A = reportError;"
+  ],
+  "mustBe": "f/import-allowlist"
+ },
+ {
+  "name": "伺服 domain 用相對路徑跑到 platform",
+  "layer": "domain",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "import type { reportError } from \"../platform/report\";",
+   "export type A = reportError;"
+  ],
+  "mustBe": "f/import-allowlist"
+ },
+ {
+  "name": "伺服 server 用 hono",
+  "layer": "server",
+  "ext": "ts",
+  "expect": "allow",
+  "code": [
+   "import { Hono } from \"hono\";",
+   "export function make(run: () => Promise<string>): Hono { const app = new Hono(); app.get(\"/\", run); return app; }"
+  ]
+ },
+ {
+  "name": "伺服 server 產生編號",
+  "layer": "server",
+  "ext": "ts",
+  "expect": "allow",
+  "code": [
+   "import { randomUUID } from \"node:crypto\";",
+   "export function newId(): string { return randomUUID(); }"
+  ]
+ },
+ {
+  "name": "伺服 server 用檔案系統",
+  "layer": "server",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "import { readFileSync } from \"node:fs\";",
+   "export const a = readFileSync;"
+  ]
+ },
+ {
+  "name": "伺服 server 用 child_process",
+  "layer": "server",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "import { exec } from \"node:child_process\";",
+   "export const a = exec;"
+  ]
+ },
+ {
+  "name": "伺服 server 轉型",
+  "layer": "server",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "export function f(x: unknown): string { return x as string; }"
+  ]
+ },
+ {
+  "name": "伺服 data 定義資料表",
+  "layer": "data",
+  "ext": "ts",
+  "expect": "allow",
+  "code": [
+   "import { pgTable, text } from \"drizzle-orm/pg-core\";",
+   "export const events = pgTable(\"events\", { id: text(\"id\") });"
+  ]
+ },
+ {
+  "name": "伺服 data 用 hono",
+  "layer": "data",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "import { Hono } from \"hono\";",
+   "export const a = Hono;"
+  ]
+ },
+ {
+  "name": "伺服 data 用 timer",
+  "layer": "data",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "export function f(): void { setTimeout(() => undefined, 1); }"
+  ]
+ },
+ {
+  "name": "伺服 platform 用 node 模組",
+  "layer": "platform",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "import { randomUUID } from \"node:crypto\";",
+   "export const a = randomUUID;"
+  ]
+ },
+ {
+  "name": "伺服 platform 用第三方套件",
+  "layer": "platform",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "import x from \"lodash\";",
+   "export const a: unknown = x;"
+  ]
+ },
+ {
+  "name": "伺服 platform 轉型",
+  "layer": "platform",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "export function f(x: unknown): string { return x as string; }"
+  ]
+ },
+ {
+  "name": "伺服 platform declare",
+  "layer": "platform",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "declare function x(): void;",
+   "export function f(): void { x(); }"
+  ]
+ },
+ {
+  "name": "伺服 platform 動態 import",
+  "layer": "platform",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "export async function f(): Promise<unknown> { return await import(\"zod\"); }"
+  ]
+ },
+ {
+  "name": "伺服 platform 型別守衛",
+  "layer": "platform",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "export function isA(x: unknown): x is string { return x !== undefined; }"
+  ]
+ },
+ {
+  "name": "伺服 contracts 放邏輯可以但不能非同步",
+  "layer": "contracts",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "export async function f(g: () => Promise<void>): Promise<void> { await g(); }"
+  ]
+ },
+ {
+  "name": "伺服 contracts 引用 platform",
+  "layer": "contracts",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "import { reportError } from \"@f/platform\";",
+   "export const a = reportError;"
+  ]
+ },
+ {
+  "name": "伺服 ui 引用 domain",
+  "layer": "ui",
+  "ext": "ts",
+  "expect": "block",
+  "code": [
+   "import { next } from \"@f/domain\";",
+   "export const a = next;"
+  ]
  }
 ]

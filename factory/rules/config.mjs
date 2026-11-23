@@ -1,5 +1,7 @@
 // 規則設定。改這個檔案要負責人核准（05 §6）。
-// layer：contracts、domain、platform、ui、apps；kind：code、test、entry
+// layer：contracts、domain（純邏輯）、ui、apps（瀏覽器）、gateway（伺服器的產品碼）
+//        platform（瀏覽器邊界）、server（Node 邊界）、data（資料庫邊界）
+// kind：code、test、entry
 import tseslint from "typescript-eslint";
 import hooks from "eslint-plugin-react-hooks";
 import effect from "eslint-plugin-react-you-might-not-need-an-effect";
@@ -77,9 +79,23 @@ const PRODUCT_SYNTAX = [
   sel("UnaryExpression[operator='void']", "禁止 void 丟棄結果：改用 await"),
 ];
 
+const EDGE_SYNTAX = [
+  sel("[declare=true]", "禁止 declare"),
+  sel("ImportExpression", "禁止動態 import"),
+  sel("TSTypePredicate", "禁止自訂型別守衛：改用 Zod"),
+  sel("JSXAttribute[name.name='dangerouslySetInnerHTML']", "改用 ui 的訊息元件"),
+];
+const EDGE_PACKAGES = {
+  platform: { react: ["StrictMode"], "react-dom/client": ["createRoot"], zod: ["z"], "@f/contracts": "*" },
+  server: { "node:crypto": ["randomUUID"], "node:http": "*", hono: "*", "@hono/node-server": "*", zod: ["z"], "@f/contracts": "*" },
+  data: { "drizzle-orm": "*", "drizzle-orm/pg-core": "*", "drizzle-orm/node-postgres": "*", pg: "*", zod: ["z"], "@f/contracts": "*" },
+};
+
 /** parser：案例庫給 { programs: [program] }；真專案給 { projectService: true } */
 export function rulesFor(layer, parser, kind = "code") {
-  const product = layer === "apps" || layer === "domain" || layer === "contracts";
+  const product = ["apps", "gateway", "domain", "contracts"].includes(layer);
+  const pure = layer === "domain" || layer === "contracts";
+  const edge = ["platform", "server", "data"].includes(layer);
   const isTest = kind === "test";
   const isEntry = kind === "entry";
   return [
@@ -104,8 +120,8 @@ export function rulesFor(layer, parser, kind = "code") {
         "@typescript-eslint/method-signature-style": ["error", "property"],
         // HTML 事件的 void 回傳由 ui 的型別決定，允許簡寫
         "@typescript-eslint/no-confusing-void-expression": ["error", { ignoreArrowShorthand: true }],
-        "f/catch-must-handle": ["error", { handlers: ["reportError"], allowResult: layer === "platform" }],
-        ...(layer !== "platform" && {
+        "f/catch-must-handle": ["error", { handlers: ["reportError"], allowResult: edge }],
+        ...(layer !== "platform" && layer !== "server" && {
           "no-restricted-properties": ["error", ...TIMING.map((property) => ({ property, message: "禁止碰計時或全域物件" })),
             { object: "Math", property: "random", message: "改用傳入的亂數" }],
         }),
@@ -116,22 +132,29 @@ export function rulesFor(layer, parser, kind = "code") {
             sel("JSXAttribute[name.name='dangerouslySetInnerHTML']", "改用訊息元件"), sel("CallExpression[callee.property.name='addEventListener']", "改用 platform 的訂閱")],
           "@typescript-eslint/consistent-type-assertions": ["error", { assertionStyle: "never" }],
         }),
+        ...(edge && {
+          "f/import-allowlist": ["error", { hints: IMPORT_HINTS, packages: EDGE_PACKAGES[layer] }],
+          "no-restricted-syntax": ["error", ...EDGE_SYNTAX],
+          "@typescript-eslint/consistent-type-assertions": ["error", { assertionStyle: "never" }],
+          ...(layer === "data" && { "f/global-allowlist": ["error", { allow: LANG, hints: HINTS }] }),
+        }),
         ...(product && {
           "f/global-allowlist": ["error", { allow: LANG, hints: HINTS }],
           "f/no-promise-to-unknown": "error",
           "f/no-dynamic-key": "error",
           "f/import-allowlist": ["error", { hints: IMPORT_HINTS, packages: {
-            react: REACT, zod: ["z"], "@f/contracts": "*", "@f/domain": "*",
-            ...(layer === "apps" && { "@f/ui": "*", "@f/platform": "*" }),
+            zod: ["z"], "@f/contracts": "*", "@f/domain": "*",
+            ...(layer === "apps" && { react: REACT, "@f/ui": "*", "@f/platform": "*" }),
+            ...(layer === "gateway" && { "@f/server": "*", "@f/data": "*" }),
             ...(isTest && { vitest: ["describe", "it", "expect"], "fast-check": "*" }),
           } }],
           "f/jsx-allowlist": ["error", {
-            tags: ["div", "section", "header", "footer", "main", "nav", "aside", "article", "p", "span", "ul", "ol", "li", "h1", "h2", "h3", "strong", "em", "time"],
+            tags: layer !== "apps" ? [] : ["div", "section", "header", "footer", "main", "nav", "aside", "article", "p", "span", "ul", "ol", "li", "h1", "h2", "h3", "strong", "em", "time"],
             attrs: ["className", "key", "role", "lang", "dateTime"],
           }],
-          ...(!isTest && { "f/no-render-effects": ["error", { entryCalls: isEntry ? ["mount"] : [] }] }),
+          ...(!isTest && { "f/no-render-effects": ["error", { entryCalls: isEntry ? [layer === "gateway" ? "start" : "mount"] : [] }] }),
           "no-restricted-syntax": ["error", ...PRODUCT_SYNTAX,
-            ...(layer !== "apps" ? [sel("[async=true]", "純邏輯不准有非同步")] : [])],
+            ...(pure ? [sel("[async=true]", "純邏輯不准有非同步")] : [])],
         }),
       },
     },

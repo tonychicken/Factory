@@ -1,4 +1,6 @@
 // 工廠自訂規則
+import { posix } from "node:path";
+
 const isTypeRef = (ref) => ref.isTypeReference && !ref.isValueReference;
 
 /** 全域變數白名單：沒列出的一律不能當值使用 */
@@ -36,6 +38,10 @@ const importAllowlist = {
       if (!node.source) return;
       const src = String(node.source.value);
       if (/^\.\.?\//.test(src)) {
+        const here = context.filename.replaceAll("\\", "/").replace(/^.*?\/(?=(?:contracts|domain|platform|server|data|ui|apps)\/(?!.*\/(?:contracts|domain|platform|server|data|ui|apps)\/))/, "");
+        const home = here.match(/^apps\/[^/]+\/src\/|^[^/]+\//)?.[0] ?? "";
+        const target = posix.join(posix.dirname(here), src);
+        if (!`${target}/`.startsWith(home)) { context.report({ node, messageId: "src", data: { src: `${src}（跑出自己的套件）` } }); return; }
         if (!/^[./\w-]+$/.test(src) || /\.(js|mjs|cjs|jsx|css|json)$/.test(src)) context.report({ node, messageId: "src", data: { src } });
         return;
       }
@@ -94,7 +100,7 @@ const catchMustHandle = {
 
     const fromPlatform = (id) => {
       let s = context.sourceCode.getScope(id);
-      while (s) { const v = s.set.get(id.name); if (v) return v.defs.some((x) => x.type === "ImportBinding" && x.parent.source.value === "@f/platform"); s = s.upper; }
+      while (s) { const v = s.set.get(id.name); if (v) return v.defs.some((x) => x.type === "ImportBinding" && ["@f/platform", "@f/server"].includes(x.parent.source.value)); s = s.upper; }
       return false;
     };
     return {
