@@ -1,0 +1,3 @@
+#!/bin/sh
+# 提交前先跑總檢查。可以被跳過，所以不能當成保證；真正的防線是 CI（03 §5）
+exec node factory/check.mjs

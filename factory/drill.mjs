@@ -50,6 +50,7 @@ const drills = [
   ["建置", "入口壞掉", edit("apps/visitor/index.html", "/src/main.tsx", "/src/missing.tsx")],
 ];
 
+const preview = fs.readFileSync("specs/preview.md"); // 規格那一道會重新產生它
 let bad = 0;
 for (const [step, name, files] of drills) {
   const saved = new Map();
@@ -63,6 +64,7 @@ for (const [step, name, files] of drills) {
     if (!caught) bad += 1;
     console.log(`${caught ? "擋下" : "漏掉"}  ${step}：${name}${caught ? "" : `\n${r.stdout.slice(0, 400)}`}`);
   } finally {
+    saved.set("specs/preview.md", preview);
     for (const [f, b] of saved) { if (b === null) fs.rmSync(f, { force: true }); else fs.writeFileSync(f, b); }
   }
 }
