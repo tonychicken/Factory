@@ -47,8 +47,12 @@ const steps = [
   ["工廠與規格的測試", () => { const files = all.filter((p) => /^(factory|specs)\/.*\.test\.(mjs|ts)$/.test(p)); const r = node(["--test", "--test-reporter=tap", ...files]); return r.ok ? [] : r.text.split("\n").filter((l) => /^not ok/.test(l)).slice(0, 15); }],
   ["出題與作答分開", () => {
     const git = (args) => spawnSync("git", args, { encoding: "utf8" });
-    const changed = [...git(["diff", "--name-only", "HEAD"]).stdout.split("\n"), ...git(["ls-files", "--others", "--exclude-standard"]).stdout.split("\n")].filter(Boolean);
-    const old = git(["show", `HEAD:${RED}`]);
+    // 本機：和上一次提交比（含還沒提交的）。CI：和 PR 的基底比（CHECK_BASE）
+    const base = process.env.CHECK_BASE ?? "HEAD";
+    const diff = git(base === "HEAD" ? ["diff", "--name-only", "HEAD"] : ["diff", "--name-only", `${base}...HEAD`]);
+    if (diff.status !== 0) return [`無法和 ${base} 比對：${diff.stderr.trim()}`];
+    const changed = [...diff.stdout.split("\n"), ...git(["ls-files", "--others", "--exclude-standard"]).stdout.split("\n")].filter(Boolean);
+    const old = git(["show", `${base}:${RED}`]);
     return separate(changed, old.status === 0 ? JSON.parse(old.stdout) : [], JSON.parse(fs.readFileSync(RED, "utf8")));
   }],
   ["產品的測試", () => {
