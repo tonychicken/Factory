@@ -1,0 +1,32 @@
+# 受保護路徑：PR 改到這些檔案，就要負責人核准（docs/v2/05-pr.md §6）。
+# 沒列在這裡的路徑，檢查全過就自動合併（待裁決 D12）。
+# 同一個檔案符合多條時，以最後一條為準。這個檔本身在 /.github/ 底下，也受保護。
+
+# 規則、CI、檢查本身
+/factory/                  @tonychicken
+/.github/                  @tonychicken
+/AGENTS.md                 @tonychicken
+/eslint.config.mjs         @tonychicken
+/.dependency-cruiser.cjs   @tonychicken
+/knip.json                 @tonychicken
+/.stylelintrc.json         @tonychicken
+/vitest.config.ts          @tonychicken
+tsconfig*.json             @tonychicken
+/.npmrc                    @tonychicken
+/.gitattributes            @tonychicken
+/.gitignore                @tonychicken
+
+# 依賴
+package.json               @tonychicken
+/package-lock.json         @tonychicken
+
+# 需求與負責人的決定
+/specs/features.ts         @tonychicken
+
+# 規則最鬆的三層：只保護出口檔
+/platform/index.ts         @tonychicken
+/server/index.ts           @tonychicken
+/ui/index.ts               @tonychicken
+
+# 根因紀錄由 agent 寫，不需要核准（放最後，蓋過上面的 /factory/）
+/factory/ledger/
